@@ -5,7 +5,11 @@ var Schema   = mongoose.Schema;
 var userSchema = new Schema({
 	'username' : String,
 	'password' : String,
-	'email' : String
+	'email' : String,
+	'faceData': {
+		type: String,
+		default: null
+	}
 });
 
 userSchema.pre('save', function(next){

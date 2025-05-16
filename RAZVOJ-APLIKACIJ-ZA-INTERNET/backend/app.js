@@ -17,6 +17,7 @@ var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/userRoutes');
 var photosRouter = require('./routes/photoRoutes');
 var commentsRouter = require('./routes/commentRoutes');
+var boxRouter = require('./routes/boxRoutes');
 
 var app = express();
 
@@ -69,6 +70,7 @@ app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use('/photos', photosRouter);
 app.use('/comments', commentsRouter);
+app.use('/boxes', boxRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

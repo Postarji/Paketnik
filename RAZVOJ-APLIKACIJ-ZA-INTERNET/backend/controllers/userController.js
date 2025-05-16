@@ -175,5 +175,75 @@ module.exports = {
                 }
             });
         }
+    },
+
+    loginWithFace: function(req, res, next) {
+        if (!req.body.faceData) {
+            return res.status(400).json({
+                message: 'Face data is required'
+            });
+        }
+
+        UserModel.find({}, function(err, users) {
+            if (err) {
+                return res.status(500).json({
+                    message: 'Error finding users',
+                    error: err
+                });
+            }
+
+            // Find user with matching face data
+            // In a real application, you would use a proper face recognition library 
+            // to compare face embeddings. This is just a simplified example.
+            const user = users.find(u => u.faceData && u.faceData === req.body.faceData);
+
+            if (!user) {
+                var err = new Error('Face not recognized');
+                err.status = 401;
+                return next(err);
+            }
+
+            req.session.userId = user._id;
+            return res.json(user);
+        });
+    },
+
+    updateFaceData: function(req, res) {
+        if (!req.session.userId) {
+            return res.status(401).json({ message: 'Not logged in' });
+        }
+
+        if (!req.body.faceData) {
+            return res.status(400).json({
+                message: 'Face data is required'
+            });
+        }
+
+        UserModel.findById(req.session.userId, function(err, user) {
+            if (err) {
+                return res.status(500).json({
+                    message: 'Error finding user',
+                    error: err
+                });
+            }
+
+            if (!user) {
+                return res.status(404).json({
+                    message: 'User not found'
+                });
+            }
+
+            user.faceData = req.body.faceData;
+
+            user.save(function(err, updatedUser) {
+                if (err) {
+                    return res.status(500).json({
+                        message: 'Error updating face data',
+                        error: err
+                    });
+                }
+                return res.json(updatedUser);
+            });
+        });
     }
 };
