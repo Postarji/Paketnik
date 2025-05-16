@@ -63,13 +63,13 @@ function AddPhoto() {
     return (
         <div className="container mt-4">
             <div className="form-container fade-in">
-                <h2 className="text-center mb-4">Upload New Photo</h2>
+                <h2 className="text-center mb-4">Upload New Book</h2>
                 <form onSubmit={onSubmit}>
                     {!userContext.user ? <Navigate replace to="/login" /> : ""}
                     {uploaded ? <Navigate replace to="/" /> : ""}
                     
                     <div className="form-group">
-                        <label htmlFor="name" className="form-label">Photo Name</label>
+                        <label htmlFor="name" className="form-label">Book Name</label>
                         <input
                             type="text"
                             id="name"

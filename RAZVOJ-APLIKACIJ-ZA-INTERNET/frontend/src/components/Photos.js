@@ -15,7 +15,7 @@ function Photos() {
 
     return (
         <div className="container mt-4">
-            <h2 className="text-center mb-4">Photo Gallery</h2>
+            <h2 className="text-center mb-4">Book Gallery</h2>
             <div className="photos-grid">
                 {photos.map(photo => (
                     <Photo 
@@ -26,7 +26,7 @@ function Photos() {
                 ))}
             </div>
             {photos.length === 0 && (
-                <p className="text-center text-muted">No photos available</p>
+                <p className="text-center text-muted">No books available</p>
             )}
         </div>
     );
