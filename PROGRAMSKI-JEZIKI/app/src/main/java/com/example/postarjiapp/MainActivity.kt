@@ -22,10 +22,12 @@ import org.json.JSONException
 import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
+import java.io.IOException
 
 class MainActivity : AppCompatActivity() {
     private var boxId: String? = null
     private val tokenFormat = 5
+    private var mediaPlayer: MediaPlayer? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -142,7 +144,7 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 val base64Data = jsonObj.getString("data")
-                println("Base64 Data: ${base64Data.take(20)}...")
+                println("Base64 Data: ${base64Data.take(100)}...")
 
                 val tokenFile = processToken(base64Data)
 
@@ -166,51 +168,91 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun processToken(base64Data: String): File {
-        val decodedBytes = Base64.decode(base64Data, Base64.DEFAULT)
+        // Decode base64 with error handling
+        val decodedBytes = try {
+            Base64.decode(base64Data, Base64.DEFAULT)
+        } catch (e: IllegalArgumentException) {
+            println("Base64 decode error: ${e.message}")
+            throw IOException("Invalid base64 data: ${e.message}")
+        }
         println("Decoded bytes length: ${decodedBytes.size}")
-        println("First 10 bytes: ${decodedBytes.take(10).joinToString(",")}")
 
-        val tempFile = File(cacheDir, "token.wav")
-        FileOutputStream(tempFile).use { it.write(decodedBytes) }
+        // Write to temporary file in cache directory
+        val tempFile = File.createTempFile("token", ".wav", cacheDir)
+        try {
+            FileOutputStream(tempFile).use { fos ->
+                fos.write(decodedBytes)
+                fos.flush()
+            }
+        } catch (e: IOException) {
+            println("File write error: ${e.message}")
+            tempFile.delete()
+            throw IOException("Failed to write WAV file: ${e.message}")
+        }
 
-        val externalFile = File(getExternalFilesDir(null), "token_output.wav")
-        FileOutputStream(externalFile).use { it.write(decodedBytes) }
-        println("Saved token to: ${externalFile.absolutePath}")
+        // Validate file size
+        if (tempFile.length() != decodedBytes.size.toLong()) {
+            println("File size mismatch: expected ${decodedBytes.size}, got ${tempFile.length()}")
+            tempFile.delete()
+            throw IOException("File size mismatch during write")
+        }
 
-        return tempFile // Assume raw .wav
+        println("Saved token to: ${tempFile.absolutePath}")
+        return tempFile
     }
 
     private fun playWav(file: File) {
         try {
-            // Test Postman’s WAV if available
-            val postmanFile = File(getExternalFilesDir(null), "postman_token.wav")
-            val testFile = if (postmanFile.exists()) postmanFile else file
-            println("Playing file: ${testFile.absolutePath}")
+            // Release any existing MediaPlayer
+            mediaPlayer?.release()
+            mediaPlayer = MediaPlayer()
 
-            val mediaPlayer = MediaPlayer()
-            mediaPlayer.setDataSource(testFile.absolutePath)
-            mediaPlayer.setVolume(1.0f, 1.0f)
-            mediaPlayer.setAudioAttributes(
-                AudioAttributes.Builder()
-                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                    .setUsage(AudioAttributes.USAGE_MEDIA)
-                    .build()
-            )
-            mediaPlayer.prepare()
-            mediaPlayer.start()
-            mediaPlayer.setOnCompletionListener {
-                it.release()
+            // Set data source and attributes
+            mediaPlayer?.apply {
+                setDataSource(file.absolutePath)
+                setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                        .setUsage(AudioAttributes.USAGE_MEDIA)
+                        .build()
+                )
+                setVolume(1.0f, 1.0f) // Max volume
+                prepare()
+                start()
+                println("Playing WAV file: ${file.absolutePath}")
+            }
+
+            // Handle completion
+            mediaPlayer?.setOnCompletionListener {
                 println("Audio playback completed")
                 Toast.makeText(this@MainActivity, "Audio playback completed", Toast.LENGTH_SHORT).show()
+                it.release()
+                mediaPlayer = null
+                file.delete() // Clean up
             }
-            mediaPlayer.setOnErrorListener { mp, what, extra ->
+
+            // Handle errors
+            mediaPlayer?.setOnErrorListener { mp, what, extra ->
                 println("MediaPlayer error: what=$what, extra=$extra")
                 Toast.makeText(this@MainActivity, "MediaPlayer error: $what", Toast.LENGTH_LONG).show()
+                mp.release()
+                mediaPlayer = null
+                file.delete()
                 true
             }
-        } catch (e: Exception) {
+
+        } catch (e: IOException) {
             println("Playback error: ${e.message}")
             Toast.makeText(this@MainActivity, "Playback error: ${e.message}", Toast.LENGTH_LONG).show()
+            file.delete()
+            mediaPlayer?.release()
+            mediaPlayer = null
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        mediaPlayer?.release()
+        mediaPlayer = null
     }
 }
