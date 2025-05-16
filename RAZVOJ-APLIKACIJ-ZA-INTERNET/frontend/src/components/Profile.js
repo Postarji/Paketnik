@@ -64,7 +64,7 @@ function Profile() {
                 <div className="profile-stats">
                     <div className="stat-card">
                         <p className="stat-value">{userPhotos.length}</p>
-                        <p className="stat-label">Photos</p>
+                        <p className="stat-label">Posts</p>
                     </div>
                     <div className="stat-card">
                         <p className="stat-value">{totalLikes}</p>

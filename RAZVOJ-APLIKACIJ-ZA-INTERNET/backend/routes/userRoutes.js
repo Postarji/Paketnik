@@ -12,6 +12,8 @@ router.get('/:id', userController.show);
 
 router.post('/', userController.create);
 router.post('/login', userController.login);
+router.post('/login/face', userController.loginWithFace);
+router.post('/face-data', userController.updateFaceData);
 
 router.put('/:id', userController.update);
 
