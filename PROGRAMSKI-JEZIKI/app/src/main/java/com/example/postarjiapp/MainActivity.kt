@@ -68,8 +68,7 @@ class MainActivity : AppCompatActivity() {
         val client = OkHttpClient.Builder()
             .addInterceptor(logging)
             .build()
-
-        // Process boxId
+        
         val path = boxId.substringAfter("HTTPS://B.DIRECT4.ME/")
         val pathWithoutTrailingSlash = path.removeSuffix("/")
         val parts = pathWithoutTrailingSlash.split("/")
