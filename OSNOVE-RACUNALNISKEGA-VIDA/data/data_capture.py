@@ -3,7 +3,7 @@ import numpy as np
 import os
 import json
 
-SHOW_PREVIEW = False  # Set to True if your environment supports cv2.imshow()
+SHOW_PREVIEW = False  # Set to True if you want to see a live preview window
 
 def setup_capture():
     cap = cv2.VideoCapture(0)
@@ -17,8 +17,26 @@ def detect_faces(frame, classifier):
     faces = classifier.detectMultiScale(gray, scaleFactor=1.3, minNeighbors=5)
     return faces
 
-def save_face(face_img, output_path, size=(128, 128)):
-    resized = cv2.resize(face_img, size)
+def preprocess_face(face_img):
+    # 1. Odstranjevanje šuma s Gaussian blur
+    denoised = cv2.GaussianBlur(face_img, (5, 5), 0)
+
+    # 2. Pretvorimo v grayscale
+    gray = cv2.cvtColor(denoised, cv2.COLOR_BGR2GRAY)
+
+    # 3. Linearizacija sivin
+    min_val = np.min(gray)
+    max_val = np.max(gray)
+    if max_val - min_val > 0:
+        linearized = ((gray - min_val) / (max_val - min_val) * 255).astype(np.uint8)
+    else:
+        linearized = gray
+
+    return linearized
+
+def save_face(face_img, output_path, size=(224, 224)):
+    preprocessed = preprocess_face(face_img)
+    resized = cv2.resize(preprocessed, size)
     cv2.imwrite(output_path, resized)
 
 def save_metadata(user_id, count, path="metadata.json"):
@@ -40,7 +58,7 @@ def capture_images(user_id, output_dir="data/raw", count=50):
         while img_count < count:
             ret, frame = cap.read()
             if not ret:
-                print("Failed to read frame from camera")
+                print("Failed to read frame from camera.")
                 break
 
             faces = detect_faces(frame, classifier)
