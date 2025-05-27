@@ -7,6 +7,27 @@ from utils.skin_detection import doloci_barvo_koze, obdelaj_sliko_s_skatlami
 
 SHOW_PREVIEW = False  # Set to True if you want to see a live preview window
 
+# ================= COLOR CONVERSIONS =================
+def convert_to_grayscale(image):
+    if len(image.shape) == 3:
+        return cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    return image
+
+def convert_to_lab(image):
+    if len(image.shape) == 3:
+        return cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
+    return image
+
+def convert_to_hsv(image):
+    if len(image.shape) == 3:
+        return cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    return image
+
+def convert_to_yuv(image):
+    if len(image.shape) == 3:
+        return cv2.cvtColor(image, cv2.COLOR_BGR2YUV)
+    return image
+
 def ensure_user_dir(user_id, output_dir="data/raw"):
     user_path = os.path.join(output_dir, str(user_id))
     os.makedirs(user_path, exist_ok=True)
@@ -19,28 +40,36 @@ def setup_capture():
     classifier = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
     return cap, classifier
 
-def preprocess_face(face_img):
-    # 1. Odstranjevanje šuma s Gaussian blur
-    denoised = cv2.GaussianBlur(face_img, (5, 5), 0)
+def preprocess_face(face_img, color_space='grayscale'):
+    # 1. Pretvorimo v izbrani barvni prostor
+    if color_space == 'grayscale':
+        img = convert_to_grayscale(face_img)
+    elif color_space == 'lab':
+        img = convert_to_lab(face_img)
+    elif color_space == 'hsv':
+        img = convert_to_hsv(face_img)
+    elif color_space == 'yuv':
+        img = convert_to_yuv(face_img)
+    else:
+        img = face_img
 
-    # 2. Pretvorimo v grayscale
-    gray = cv2.cvtColor(denoised, cv2.COLOR_BGR2GRAY)
+    # 2. Odstrani šum
+    img = cv2.GaussianBlur(img, (5, 5), 0)
 
     # 3. Linearizacija sivin
-    min_val = np.min(gray)
-    max_val = np.max(gray)
-    if max_val - min_val > 0:
-        linearized = ((gray - min_val) / (max_val - min_val) * 255).astype(np.uint8)
-    else:
-        linearized = gray
+    if len(img.shape) == 2:
+        min_val = np.min(img)
+        max_val = np.max(img)
+        if max_val - min_val > 0:
+            img = ((img - min_val) / (max_val - min_val) * 255).astype(np.uint8)
 
-    return linearized
+    return img
 
-def save_face(face_img, output_path, size=(224, 224)):
-    preprocessed = preprocess_face(face_img)
+def save_face(face_img, output_path, size=(224, 224), color_space='grayscale'):
+    preprocessed = preprocess_face(face_img, color_space=color_space)
     resized = cv2.resize(preprocessed, size)
     cv2.imwrite(output_path, resized)
-
+    
 def save_metadata(user_id, count, path="metadata.json"):
     data = {
         "user_id": user_id,
@@ -52,7 +81,7 @@ def save_metadata(user_id, count, path="metadata.json"):
     with open(path, "w") as f:
         json.dump(data, f, indent=4)
 
-def capture_images(user_id, output_dir="data/raw", count=50):
+def capture_images(user_id, output_dir="data/raw", count=50, color_space='grayscale'):
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
         print("[ERROR] Cannot open camera.")
@@ -97,4 +126,4 @@ def capture_images(user_id, output_dir="data/raw", count=50):
 
 if __name__ == "__main__":
     user_input = input("Enter User ID or Name: ")
-    capture_images(user_id=user_input, count=50)
+    capture_images(user_id=user_input, count=50, color_space='grayscale')# Options: grayscale, lab, hsv, yuv
