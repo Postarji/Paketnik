@@ -36,15 +36,26 @@ def change_brightness(image, value=30):
     bright = cv2.cvtColor(final_hsv, cv2.COLOR_HSV2BGR)
     return bright
 
+def add_gaussian_noise(image, mean=0, std=15):
+    noise = np.random.normal(mean, std, image.shape).astype(np.int16)
+    noisy_image = image.astype(np.int16) + noise
+    noisy_image = np.clip(noisy_image, 0, 255).astype(np.uint8)
+    return noisy_image
+
+
 def augment_image(image):
     augments = []
+    
     augments.append(flip_image(image))
     augments.append(rotate_image(image, random.choice([-15, 15])))
     augments.append(change_brightness(image, random.randint(-40, 40)))
+    augments.append(add_gaussian_noise(image))
+    
     return augments
 
 def save_augmented_images(images, original_paths, output_dir="data/augmented"):
     os.makedirs(output_dir, exist_ok=True)
+    
     for img, original_path in zip(images, original_paths):
         filename = Path(original_path).stem
         augmented_versions = augment_image(img)
