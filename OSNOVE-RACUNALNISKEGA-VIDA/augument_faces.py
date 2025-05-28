@@ -49,13 +49,18 @@ def resize_image(image, size=(224, 224)):
 
 def augment_image(image):
     augments = []
-    
-    augments.append(flip_image(image))
-    augments.append(rotate_image(image, random.choice([-15, 15])))
-    augments.append(change_brightness(image, random.randint(-40, 40)))
-    augments.append(add_gaussian_noise(image))
-    
-    return augments
+
+    if random.random() < 0.5:
+        augments.append(flip_image(image))
+    if random.random() < 0.5:
+        augments.append(rotate_image(image, random.choice([-15, 15])))
+    if random.random() < 0.5:
+        augments.append(change_brightness(image, random.randint(-40, 40)))
+    if random.random() < 0.5:
+        augments.append(add_gaussian_noise(image))
+
+    return augments or [image]
+
 
 def save_augmented_images(images, paths, output_dir="data/augmented", size=(224, 224)):
     os.makedirs(output_dir, exist_ok=True)
