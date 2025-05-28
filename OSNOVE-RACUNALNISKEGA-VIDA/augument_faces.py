@@ -3,6 +3,7 @@ import numpy as np
 import os
 from pathlib import Path
 import random
+import csv
 
 def load_images(input_dir):
     images = []
@@ -42,6 +43,9 @@ def add_gaussian_noise(image, mean=0, std=15):
     noisy_image = np.clip(noisy_image, 0, 255).astype(np.uint8)
     return noisy_image
 
+def resize_image(image, size=(224, 224)):
+    return cv2.resize(image, size)
+
 
 def augment_image(image):
     augments = []
@@ -53,15 +57,30 @@ def augment_image(image):
     
     return augments
 
-def save_augmented_images(images, original_paths, output_dir="data/augmented"):
+def save_augmented_images(images, paths, output_dir="data/augmented", size=(224, 224)):
     os.makedirs(output_dir, exist_ok=True)
-    
-    for img, original_path in zip(images, original_paths):
-        filename = Path(original_path).stem
-        augmented_versions = augment_image(img)
-        for idx, aug_img in enumerate(augmented_versions):
-            output_path = os.path.join(output_dir, f"{filename}_aug{idx}.jpg")
-            cv2.imwrite(output_path, aug_img)
+    label_file_path = os.path.join(output_dir, "labels.csv")
+    # Ta del kode izvaja augmentacijo (povečanje) podatkov in shrani tako spremenjene slike kot tudi njihove oznake.
+    # Ustvari CSV datoteko ('labels.csv'), kjer vsaka vrstica vsebuje:
+    #   - ime shranjene augmentirane slike
+    #   - pripadajočo oznako (ID uporabnika oz. razred), ki se določi glede na ime nadrejenega imenika originalne slike.
+    # To omogoča enostavno uporabo slik pri nadzorovanem učenju (npr. za klasifikacijo).
+
+    with open(label_file_path, mode='w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(["filename", "label"])
+
+        for img, original_path in zip(images, paths):
+            label = Path(original_path).parent.name
+            filename = Path(original_path).stem
+            aug_versions = augment_image(img)
+
+            for i, aug_img in enumerate(aug_versions):
+                aug_img = resize_image(aug_img, size)
+                output_name = f"{filename}_aug{i}.jpg"
+                output_path = os.path.join(output_dir, output_name)
+                cv2.imwrite(output_path, aug_img)
+                writer.writerow([output_name, label])
 
 if __name__ == "__main__":
     images, paths = load_images("data/raw/1")  # or another user's folder
