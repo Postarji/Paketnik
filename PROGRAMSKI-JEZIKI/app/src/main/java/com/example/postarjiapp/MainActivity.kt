@@ -26,9 +26,11 @@ import okhttp3.logging.HttpLoggingInterceptor
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.File
+import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
 import java.util.concurrent.TimeUnit
+import java.util.zip.ZipInputStream
 
 class MainActivity : AppCompatActivity() {
     private var boxId: String? = null
@@ -185,7 +187,7 @@ class MainActivity : AppCompatActivity() {
                 Log.d(TAG, "Base64 Data length: ${base64Data.length}")
 
                 updateStatus("Processing token...")
-                val tokenFile = processToken(base64Data)
+                val tokenFile = processZipToken(base64Data)
 
                 withContext(Dispatchers.Main) {
                     updateStatus("Playing token...")
@@ -215,7 +217,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun processToken(base64Data: String): File {
+    private fun processZipToken(base64Data: String): File {
         var paddedBase64Data = base64Data
         // Add padding if necessary
         while (paddedBase64Data.length % 4 != 0) {
@@ -223,36 +225,81 @@ class MainActivity : AppCompatActivity() {
         }
 
         val decodedBytes = try {
-            Base64.decode(base64Data, Base64.DEFAULT)
+            Base64.decode(paddedBase64Data, Base64.DEFAULT)
         } catch (e: IllegalArgumentException) {
             Log.e(TAG, "Base64 decode error: ${e.message}")
             throw IOException("Invalid base64 data: ${e.message}")
         }
 
-        Log.d(TAG, "Decoded bytes length: ${decodedBytes.size}")
+        Log.d(TAG, "Decoded ZIP bytes length: ${decodedBytes.size}")
 
-        // Write to temporary file in cache directory with .wav extension
-        val tempFile = File.createTempFile("token", ".wav", cacheDir)
+        // Create temporary ZIP file
+        val zipFile = File.createTempFile("token", ".zip", cacheDir)
         try {
-            FileOutputStream(tempFile).use { fos ->
+            FileOutputStream(zipFile).use { fos ->
                 fos.write(decodedBytes)
                 fos.flush()
             }
         } catch (e: IOException) {
-            Log.e(TAG, "File write error: ${e.message}")
-            tempFile.delete()
-            throw IOException("Failed to write WAV file: ${e.message}")
+            Log.e(TAG, "ZIP file write error: ${e.message}")
+            zipFile.delete()
+            throw IOException("Failed to write ZIP file: ${e.message}")
         }
 
-        // Validate file size
-        if (tempFile.length() != decodedBytes.size.toLong()) {
-            Log.e(TAG, "File size mismatch: expected ${decodedBytes.size}, got ${tempFile.length()}")
-            tempFile.delete()
-            throw IOException("File size mismatch during write")
+        Log.d(TAG, "Created ZIP file: ${zipFile.absolutePath}")
+
+        // Extract WAV file from ZIP
+        val wavFile = extractWavFromZip(zipFile)
+
+        // Clean up ZIP file
+        zipFile.delete()
+
+        return wavFile
+    }
+
+    private fun extractWavFromZip(zipFile: File): File {
+        var wavFile: File? = null
+
+        try {
+            ZipInputStream(FileInputStream(zipFile)).use { zipInput ->
+                var entry = zipInput.nextEntry
+
+                while (entry != null) {
+                    Log.d(TAG, "ZIP entry: ${entry.name}")
+
+                    // Look for WAV file in the ZIP
+                    if (!entry.isDirectory && entry.name.lowercase().endsWith(".wav")) {
+                        // Create output WAV file
+                        wavFile = File.createTempFile("extracted_token", ".wav", cacheDir)
+
+                        FileOutputStream(wavFile).use { fos ->
+                            val buffer = ByteArray(1024)
+                            var length: Int
+                            while (zipInput.read(buffer).also { length = it } > 0) {
+                                fos.write(buffer, 0, length)
+                            }
+                            fos.flush()
+                        }
+
+                        Log.d(TAG, "Extracted WAV file: ${wavFile!!.absolutePath}, size: ${wavFile!!.length()}")
+                        break
+                    }
+
+                    zipInput.closeEntry()
+                    entry = zipInput.nextEntry
+                }
+            }
+        } catch (e: IOException) {
+            Log.e(TAG, "ZIP extraction error: ${e.message}")
+            wavFile?.delete()
+            throw IOException("Failed to extract WAV from ZIP: ${e.message}")
         }
 
-        Log.d(TAG, "Saved token to: ${tempFile.absolutePath}")
-        return tempFile
+        if (wavFile == null || !wavFile!!.exists()) {
+            throw IOException("No WAV file found in ZIP archive")
+        }
+
+        return wavFile as File
     }
 
     private fun playWav(file: File) {
