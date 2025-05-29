@@ -22,18 +22,35 @@ class LoginActivity : AppCompatActivity() {
         btnLogin = findViewById(R.id.btnLogin)
 
         btnLogin.setOnClickListener {
-            val email = etEmail.text.toString().trim()
+            val username = etEmail.text.toString().trim()
             val password = etPassword.text.toString().trim()
 
-            if (email.isEmpty() || password.isEmpty()) {
+            if (username.isEmpty() || password.isEmpty()) {
                 Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show()
             } else {
-                Toast.makeText(this, "Login clicked", Toast.LENGTH_SHORT).show()
+                val request = LoginRequest(username, password)
 
-                // Simulate successful login and move to MainActivity
-                val intent = Intent(this@LoginActivity, MainActivity::class.java)
-                startActivity(intent)
-                finish()
+                ApiClient.instance.login(request).enqueue(object : retrofit2.Callback<UserResponse> {
+                    override fun onResponse(
+                        call: retrofit2.Call<UserResponse>,
+                        response: retrofit2.Response<UserResponse>
+                    ) {
+                        if (response.isSuccessful && response.body() != null) {
+                            val user = response.body()!!
+                            Toast.makeText(this@LoginActivity, "Welcome ${user.username}", Toast.LENGTH_SHORT).show()
+
+                            val intent = Intent(this@LoginActivity, MainActivity::class.java)
+                            startActivity(intent)
+                            finish()
+                        } else {
+                            Toast.makeText(this@LoginActivity, "Login failed", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+
+                    override fun onFailure(call: retrofit2.Call<UserResponse>, t: Throwable) {
+                        Toast.makeText(this@LoginActivity, "Error: ${t.message}", Toast.LENGTH_SHORT).show()
+                    }
+                })
             }
         }
     }
