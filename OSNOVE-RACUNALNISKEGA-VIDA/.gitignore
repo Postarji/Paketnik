@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+*.egg-info/
+*.log
+.DS_Store
+.vscode/
+*.ipynb_checkpoints/
