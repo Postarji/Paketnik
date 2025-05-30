@@ -57,4 +57,13 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/scanButton" />
 
+    <Button
+        android:id="@+id/btnGoToLogin"
+        android:layout_width="378dp"
+        android:layout_height="43dp"
+        android:layout_marginTop="16dp"
+        android:text="Go to Login"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/openBoxButton" />
 </androidx.constraintlayout.widget.ConstraintLayout>
