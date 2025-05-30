@@ -45,6 +45,12 @@ class MainActivity : AppCompatActivity() {
         val scanButton: Button = findViewById(R.id.scanButton)
         val openBoxButton: Button = findViewById(R.id.openBoxButton)
         val statusText: TextView = findViewById(R.id.statusText)
+        val btnGoToLogin: TextView = findViewById(R.id.btnGoToLogin)
+
+        btnGoToLogin.setOnClickListener {
+            val intent = Intent(this, LoginActivity::class.java)
+            startActivity(intent)
+        }
 
         boxId = "540"
         statusText.text = "Ready with Box ID: $boxId"
