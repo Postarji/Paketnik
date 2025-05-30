@@ -3,7 +3,7 @@ import numpy as np
 import os
 import json
 from datetime import datetime
-from utils.skin_detection import doloci_barvo_koze, obdelaj_sliko_s_skatlami
+from .utils.skin_detection import doloci_barvo_koze, obdelaj_sliko_s_skatlami
 
 SHOW_PREVIEW = False  # Set to True if you want to see a live preview window
 
