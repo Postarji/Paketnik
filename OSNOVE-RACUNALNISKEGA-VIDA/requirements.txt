@@ -3,4 +3,7 @@ numpy
 opencv-python
 fastapi
 uvicorn
-pillow
+Pillow
+pymongo
+python-dotenv
+python-multipart 
