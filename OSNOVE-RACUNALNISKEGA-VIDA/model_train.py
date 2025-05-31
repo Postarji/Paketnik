@@ -22,3 +22,26 @@ class FaceSequence(Sequence):
         self.shuffle = shuffle
         self.augment_fn = augment_fn
         self.on_epoch_end()
+        
+    def __len__(self):
+        return int(np.ceil(len(self.image_paths) / self.batch_size))
+
+    def __getitem__(self, idx):
+        batch_paths = self.image_paths[idx * self.batch_size:(idx + 1) * self.batch_size]
+        batch_labels = self.labels[idx * self.batch_size:(idx + 1) * self.batch_size]
+        batch_images = []
+
+        for path in batch_paths:
+            img = cv2.imread(path)
+            if img is None:
+                continue
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            img = cv2.resize(img, self.input_size)
+            img = img.astype(np.float32) / 255.0
+
+            if self.augment_fn:
+                img = self.augment_fn(img)
+
+            batch_images.append(img)
+
+        return np.array(batch_images), np.array(batch_labels)
