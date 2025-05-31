@@ -70,3 +70,14 @@ def zgradi_model(capacity=3, vhodna_oblika=(224, 224, 3), razredi=3):
     model.add(Dense(64, activation='sigmoid'))
     model.add(Dense(razredi, activation='softmax'))
     return model
+
+def narisi_grafe(history, capacity_label):
+    plt.plot(history.history['accuracy'], label='Učna')
+    plt.plot(history.history['val_accuracy'], label='Validacijska')
+    plt.title(f'Točnost modela (kapaciteta: {capacity_label})')
+    plt.xlabel('Epoha')
+    plt.ylabel('Točnost')
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(f"accuracy_{capacity_label}.png")
+    plt.close()
