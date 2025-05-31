@@ -54,3 +54,19 @@ def nalozi_poti_in_oznake(pot_csv='data/augmented/labels.csv', base_dir='data/au
     label_map = {label: i for i, label in enumerate(sorted(set(labels)))}
     numeric_labels = np.array([label_map[label] for label in labels])
     return np.array(paths), numeric_labels, label_map
+
+def zgradi_model(capacity=3, vhodna_oblika=(224, 224, 3), razredi=3):
+    model = Sequential()
+    kanali = 32
+    for i in range(capacity):
+        model.add(Conv2D(kanali, (3, 3), padding='same', input_shape=vhodna_oblika if i == 0 else None))
+        model.add(Dropout(0.25))
+        model.add(tf.keras.layers.Activation('elu'))
+        model.add(MaxPooling2D(pool_size=(2, 2)))
+        kanali *= 2
+
+    model.add(Flatten())
+    model.add(Dense(64, activation='sigmoid'))
+    model.add(Dense(64, activation='sigmoid'))
+    model.add(Dense(razredi, activation='softmax'))
+    return model
