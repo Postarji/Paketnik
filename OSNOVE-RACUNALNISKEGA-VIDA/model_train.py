@@ -81,3 +81,35 @@ def narisi_grafe(history, capacity_label):
     plt.grid(True)
     plt.savefig(f"accuracy_{capacity_label}.png")
     plt.close()
+
+def main():
+    poti, oznake, label_map = nalozi_poti_in_oznake()
+
+    if len(label_map) < 2:
+        print("[NAPAKA] Za učenje modela potrebujemo vsaj dve različni osebi (razreda).")
+        return
+
+    poti_train, poti_temp, oznake_train, oznake_temp = train_test_split(
+        poti, oznake, test_size=0.4, stratify=oznake, random_state=42)
+    poti_val, poti_test, oznake_val, oznake_test = train_test_split(
+        poti_temp, oznake_temp, test_size=0.5, stratify=oznake_temp, random_state=42)
+
+    train_gen = FaceSequence(poti_train, oznake_train, batch_size=32, input_size=(224, 224))
+    val_gen = FaceSequence(poti_val, oznake_val, batch_size=32, input_size=(224, 224))
+    test_gen = FaceSequence(poti_test, oznake_test, batch_size=32, input_size=(224, 224), shuffle=False)
+
+    for capacity in [2, 3, 4]:
+        print(f"\n--- Učenje modela s kapaciteto {capacity} ---")
+        model = zgradi_model(capacity=capacity, vhodna_oblika=(224, 224, 3), razredi=len(label_map))
+        model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+        history = model.fit(train_gen, validation_data=val_gen, epochs=20, verbose=2)
+
+        test_loss, test_accuracy = model.evaluate(test_gen, verbose=0)
+        print(f"Testna natančnost (kapaciteta {capacity}): {test_accuracy:.4f}")
+
+        model.save(f"model_obrazi_kapaciteta_{capacity}.keras")
+        narisi_grafe(history, f"kapaciteta_{capacity}")
+
+
+if __name__ == "__main__":
+    main()
