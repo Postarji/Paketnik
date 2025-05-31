@@ -1,3 +1,9 @@
 pytest
 numpy
 opencv-python
+fastapi
+uvicorn
+Pillow
+pymongo
+python-dotenv
+python-multipart 
