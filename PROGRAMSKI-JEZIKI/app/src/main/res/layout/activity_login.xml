@@ -12,7 +12,7 @@
         android:id="@+id/textView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Login here"
+        android:text="Login here:"
         android:padding="12dp"
         android:layout_marginBottom="16dp"
         android:textAlignment="center"/>
@@ -51,7 +51,7 @@
         android:id="@+id/textViewRegister"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Register here"
+        android:text="Register here:"
         android:padding="12dp"
         android:layout_marginBottom="16dp"
         android:textAlignment="center"/>

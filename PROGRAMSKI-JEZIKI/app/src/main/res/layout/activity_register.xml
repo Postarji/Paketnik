@@ -12,13 +12,13 @@
         android:id="@+id/textView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Register here"
+        android:text="Register here:"
         android:padding="12dp"
         android:layout_marginBottom="16dp"
         android:textAlignment="center"/>
 
     <EditText
-        android:id="@+id/etUsername"
+        android:id="@+id/etUsernameRegister"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="Username"
@@ -28,7 +28,7 @@
         android:layout_marginBottom="16dp"/>
 
     <EditText
-        android:id="@+id/etEmail"
+        android:id="@+id/etEmailRegister"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="Email"
@@ -38,7 +38,7 @@
         android:layout_marginBottom="16dp"/>
 
     <EditText
-        android:id="@+id/etPassword"
+        android:id="@+id/etPasswordRegister"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="Password"
@@ -48,10 +48,10 @@
         android:layout_marginBottom="24dp"/>
 
     <Button
-        android:id="@+id/btnLogin"
+        android:id="@+id/btnRegister"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Login"
+        android:text="Register"
         android:background="@android:color/holo_blue_light"
         android:textColor="#fff"
         android:padding="12dp"/>
