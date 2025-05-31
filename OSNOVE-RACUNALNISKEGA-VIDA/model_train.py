@@ -13,3 +13,12 @@ import matplotlib.pyplot as plt
 
 
 
+class FaceSequence(Sequence):
+    def __init__(self, image_paths, labels, batch_size=32, input_size=(224, 224), shuffle=True, augment_fn=None):
+        self.image_paths = image_paths
+        self.labels = labels
+        self.batch_size = batch_size
+        self.input_size = input_size
+        self.shuffle = shuffle
+        self.augment_fn = augment_fn
+        self.on_epoch_end()
