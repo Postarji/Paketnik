@@ -22,7 +22,7 @@ class FaceSequence(Sequence):
         self.shuffle = shuffle
         self.augment_fn = augment_fn
         self.on_epoch_end()
-        
+
     def __len__(self):
         return int(np.ceil(len(self.image_paths) / self.batch_size))
 
@@ -45,3 +45,12 @@ class FaceSequence(Sequence):
             batch_images.append(img)
 
         return np.array(batch_images), np.array(batch_labels)
+    
+    # === Nalaganje poti in oznak iz labels.csv ===
+def nalozi_poti_in_oznake(pot_csv='data/augmented/labels.csv', base_dir='data/augmented'):
+    df = pd.read_csv(pot_csv)
+    paths = [os.path.join(base_dir, fname) for fname in df['filename']]
+    labels = df['label'].values
+    label_map = {label: i for i, label in enumerate(sorted(set(labels)))}
+    numeric_labels = np.array([label_map[label] for label in labels])
+    return np.array(paths), numeric_labels, label_map
