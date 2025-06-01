@@ -1,5 +1,6 @@
 package com.example.postarjiapp
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.media.AudioAttributes
 import android.media.AudioFormat
@@ -33,11 +34,15 @@ import java.util.concurrent.TimeUnit
 import java.util.zip.ZipInputStream
 
 class MainActivity : AppCompatActivity() {
-    private var boxId: String? = null
-    private val tokenFormat = 4
+    private var boxId: String? = "540"
     private var mediaPlayer: MediaPlayer? = null
-    private val TAG = "MainActivity"
 
+    private val TAG = "MainActivity"
+    private val tokenFormat = 4
+    private val apiUrl = "https://api-d4me-stage.direct4.me/sandbox/v1/Access/openbox"
+    private val bearerToken = "Bearer 9ea96945-3a37-4638-a5d4-22e89fbc998f"
+
+    @SuppressLint("SetTextI18n")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -47,27 +52,27 @@ class MainActivity : AppCompatActivity() {
         val statusText: TextView = findViewById(R.id.statusText)
         val btnGoToLogin: TextView = findViewById(R.id.btnGoToLogin)
 
+        // Go to login screen
         btnGoToLogin.setOnClickListener {
             val intent = Intent(this, LoginActivity::class.java)
             startActivity(intent)
         }
 
-        boxId = "540"
+        // Initial setup
         statusText.text = "Ready with Box ID: $boxId"
         openBoxButton.isEnabled = true
 
-        scanButton.setOnClickListener {
-            startScan()
-        }
+        scanButton.setOnClickListener { startScan() }
 
         openBoxButton.setOnClickListener {
-            boxId?.let { id ->
-                statusText.text = "Opening box $id..."
-                openBox(id, tokenFormat)
+            boxId?.let {
+                statusText.text = "Opening box $it..."
+                openBox(it, tokenFormat)
             }
         }
     }
 
+    //QR Code scanner launched
     private fun startScan() {
         IntentIntegrator(this).apply {
             setDesiredBarcodeFormats(IntentIntegrator.QR_CODE)
@@ -77,39 +82,26 @@ class MainActivity : AppCompatActivity() {
             initiateScan()
         }
     }
-
+    //Handling QR Code scan results
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         val result = IntentIntegrator.parseActivityResult(requestCode, resultCode, data)
         if (result != null && result.contents != null) {
-            try {
-                //extract box ID from QR code content
-                val qrContent = result.contents
-                Log.d(TAG, "Scanned QR content: $qrContent")
+            Log.d(TAG, "Scanned QR content: ${result.contents}")
 
-                boxId = "540"
-
-                // Save the full QR content for reference
-                val qrInfo = qrContent
-
-                findViewById<TextView>(R.id.statusText).text = "Box ID: $boxId (from QR)"
-                findViewById<Button>(R.id.openBoxButton).isEnabled = true
-                Toast.makeText(this, "Ready to open box ID: $boxId", Toast.LENGTH_SHORT).show()
-            } catch (e: Exception) {
-                Log.e(TAG, "Error parsing QR: ${e.message}")
-                Toast.makeText(this, "Failed to parse QR: ${e.message}", Toast.LENGTH_LONG).show()
-            }
+            boxId = "540"
+            updateStatus("Box ID: $boxId (from QR)")
+            findViewById<Button>(R.id.openBoxButton).isEnabled = true
+            Toast.makeText(this, "Ready to open box ID: $boxId", Toast.LENGTH_SHORT).show()
         } else {
             super.onActivityResult(requestCode, resultCode, data)
         }
     }
-
+    //sending API request for opening the box
     private fun openBox(boxId: String, tokenFormat: Int) {
-        val logging = HttpLoggingInterceptor().apply {
-            setLevel(HttpLoggingInterceptor.Level.BODY)
-        }
-
         val client = OkHttpClient.Builder()
-            .addInterceptor(logging)
+            .addInterceptor(HttpLoggingInterceptor().apply {
+                level = HttpLoggingInterceptor.Level.BODY
+            })
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
@@ -118,7 +110,7 @@ class MainActivity : AppCompatActivity() {
         val json = """
             {
                 "deliveryId": 0,
-                "boxId": 540,
+                "boxId": $boxId,
                 "tokenFormat": $tokenFormat,
                 "latitude": null,
                 "longitude": null,
@@ -141,14 +133,11 @@ class MainActivity : AppCompatActivity() {
             .build()
 
         CoroutineScope(Dispatchers.IO).launch {
+            updateStatus("Connecting to server...")
             try {
-                updateStatus("Connecting to server...")
                 val response = client.newCall(request).execute()
                 val statusCode = response.code
                 val responseBody = response.body?.string()
-
-                Log.d(TAG, "Status Code: $statusCode")
-                Log.d(TAG, "Response Body: ${responseBody?.take(100)}...")
 
                 if (!response.isSuccessful) {
                     val errorBody = responseBody ?: "No response body"
@@ -216,98 +205,38 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-
-    private fun updateStatus(status: String) {
-        runOnUiThread {
-            findViewById<TextView>(R.id.statusText).text = status
-        }
-    }
-
+    //Decoding and unzipping the token into the WAV file
     private fun processZipToken(base64Data: String): File {
-        var paddedBase64Data = base64Data
-        // Add padding if necessary
-        while (paddedBase64Data.length % 4 != 0) {
-            paddedBase64Data += "="
-        }
+        val decodedBytes = Base64.decode(base64Data, Base64.DEFAULT)
 
-        val decodedBytes = try {
-            Base64.decode(paddedBase64Data, Base64.DEFAULT)
-        } catch (e: IllegalArgumentException) {
-            Log.e(TAG, "Base64 decode error: ${e.message}")
-            throw IOException("Invalid base64 data: ${e.message}")
-        }
-
-        Log.d(TAG, "Decoded ZIP bytes length: ${decodedBytes.size}")
-
-        // Create temporary ZIP file
         val zipFile = File.createTempFile("token", ".zip", cacheDir)
-        try {
-            FileOutputStream(zipFile).use { fos ->
-                fos.write(decodedBytes)
-                fos.flush()
-            }
-        } catch (e: IOException) {
-            Log.e(TAG, "ZIP file write error: ${e.message}")
-            zipFile.delete()
-            throw IOException("Failed to write ZIP file: ${e.message}")
-        }
+        FileOutputStream(zipFile).use { it.write(decodedBytes) }
 
-        Log.d(TAG, "Created ZIP file: ${zipFile.absolutePath}")
-
-        // Extract WAV file from ZIP
-        val wavFile = extractWavFromZip(zipFile)
-
-        // Clean up ZIP file
-        zipFile.delete()
-
-        return wavFile
+        return extractWavFromZip(zipFile).also { zipFile.delete() }
     }
 
+    //Extracting the WAV from a zip archive
     private fun extractWavFromZip(zipFile: File): File {
-        var wavFile: File? = null
-
-        try {
-            ZipInputStream(FileInputStream(zipFile)).use { zipInput ->
-                var entry = zipInput.nextEntry
-
-                while (entry != null) {
-                    Log.d(TAG, "ZIP entry: ${entry.name}")
-
-                    // Look for WAV file in the ZIP
-                    if (!entry.isDirectory && entry.name.lowercase().endsWith(".wav")) {
-                        // Create output WAV file
-                        wavFile = File.createTempFile("extracted_token", ".wav", cacheDir)
-
-                        FileOutputStream(wavFile).use { fos ->
-                            val buffer = ByteArray(1024)
-                            var length: Int
-                            while (zipInput.read(buffer).also { length = it } > 0) {
-                                fos.write(buffer, 0, length)
-                            }
-                            fos.flush()
-                        }
-
-                        Log.d(TAG, "Extracted WAV file: ${wavFile!!.absolutePath}, size: ${wavFile!!.length()}")
-                        break
+        ZipInputStream(FileInputStream(zipFile)).use { zipInput ->
+            var entry = zipInput.nextEntry
+            while (entry != null) {
+                // Looking for WAV file in the ZIP
+                if (!entry.isDirectory && entry.name.lowercase().endsWith(".wav")) {
+                    // Creating output WAV file
+                    val wavFile = File.createTempFile("extracted_token", ".wav", cacheDir)
+                    FileOutputStream(wavFile).use { output ->
+                        zipInput.copyTo(output)
                     }
-
-                    zipInput.closeEntry()
-                    entry = zipInput.nextEntry
+                    return wavFile
                 }
+                zipInput.closeEntry()
+                entry = zipInput.nextEntry
             }
-        } catch (e: IOException) {
-            Log.e(TAG, "ZIP extraction error: ${e.message}")
-            wavFile?.delete()
-            throw IOException("Failed to extract WAV from ZIP: ${e.message}")
         }
-
-        if (wavFile == null || !wavFile!!.exists()) {
-            throw IOException("No WAV file found in ZIP archive")
-        }
-
-        return wavFile as File
+        throw IOException("No WAV file found in ZIP")
     }
 
+    //Play WAV using a MediaPlayer
     private fun playWav(file: File) {
         try {
             // Release any existing MediaPlayer
@@ -329,16 +258,13 @@ class MainActivity : AppCompatActivity() {
 
                 prepare()
                 start()
-                Log.d(TAG, "Playing WAV file: ${file.absolutePath}")
             }
 
             // Handle completion
             mediaPlayer?.setOnCompletionListener {
-                Log.d(TAG, "Audio playback completed")
-                runOnUiThread {
-                    updateStatus("Box opened successfully!")
-                    Toast.makeText(this@MainActivity, "Audio playback completed", Toast.LENGTH_SHORT).show()
-                }
+                Log.d(TAG, "Playback finished")
+                updateStatus("Box opened successfully!")
+                Toast.makeText(this@MainActivity, "Token playback completed", Toast.LENGTH_SHORT).show()
                 it.release()
                 mediaPlayer = null
                 file.delete()
@@ -347,10 +273,7 @@ class MainActivity : AppCompatActivity() {
             // Handle errors
             mediaPlayer?.setOnErrorListener { mp, what, extra ->
                 Log.e(TAG, "MediaPlayer error: what=$what, extra=$extra")
-                runOnUiThread {
-                    updateStatus("Playback error: $what")
-                    Toast.makeText(this@MainActivity, "MediaPlayer error: $what", Toast.LENGTH_LONG).show()
-                }
+                updateStatus("Playback error: $what")
                 mp.release()
                 mediaPlayer = null
                 file.delete()
@@ -369,49 +292,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // Alternative audio playback method using AudioTrack for direct control
-    private fun playWavWithAudioTrack(file: File) {
-        try {
-            val fileBytes = file.readBytes()
-
-            // Skip WAV header (typically 44 bytes)
-            val headerSize = 44
-            val audioData = fileBytes.copyOfRange(headerSize, fileBytes.size)
-
-            // Configure AudioTrack
-            val sampleRate = 44100 // Standard sample rate
-            val channelConfig = AudioFormat.CHANNEL_OUT_MONO
-            val audioFormat = AudioFormat.ENCODING_PCM_16BIT
-
-            val bufferSize = AudioTrack.getMinBufferSize(sampleRate, channelConfig, audioFormat)
-
-            val audioTrack = AudioTrack.Builder()
-                .setAudioAttributes(AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_MEDIA)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                    .build())
-                .setAudioFormat(AudioFormat.Builder()
-                    .setEncoding(audioFormat)
-                    .setSampleRate(sampleRate)
-                    .setChannelMask(channelConfig)
-                    .build())
-                .setBufferSizeInBytes(bufferSize)
-                .build()
-
-            audioTrack.play()
-            audioTrack.write(audioData, 0, audioData.size)
-
-            audioTrack.stop()
-            audioTrack.release()
-            file.delete()
-
-        } catch (e: Exception) {
-            Log.e(TAG, "AudioTrack error: ${e.message}", e)
-            runOnUiThread {
-                updateStatus("AudioTrack error")
-                Toast.makeText(this, "AudioTrack error: ${e.message}", Toast.LENGTH_LONG).show()
-            }
-            file.delete()
+    private fun updateStatus(status: String) {
+        runOnUiThread {
+            findViewById<TextView>(R.id.statusText).text = status
         }
     }
 
