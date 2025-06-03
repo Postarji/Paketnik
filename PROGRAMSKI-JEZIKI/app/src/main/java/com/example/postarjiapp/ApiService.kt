@@ -28,6 +28,8 @@ interface ApiService {
 
     @GET("check_2fa_status/{challenge_id}")
     fun check2FAStatus(@Path("challenge_id") challengeId: String): Call<TwoFAStatusResponse>
+    @POST("register")
+    fun register(@Body request: RegisterRequest): Call<UserResponse>
 }
 
 // Data classes for 2FA API responses
