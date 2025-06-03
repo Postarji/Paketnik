@@ -4,15 +4,16 @@ import os
 from pathlib import Path
 import random
 import csv
+from config import AUGMENTED_DIR
 
 def load_images(input_dir):
     images = []
     paths = []
-    for file in Path(input_dir).glob("*.jpg"):
+    for file in Path(input_dir).glob("*.jp*g"):
         img = cv2.imread(str(file))
         if img is not None:
             images.append(img)
-            paths.append(str(file))
+            paths.append(file)
     return images, paths
 
 
@@ -62,31 +63,27 @@ def augment_image(image):
     return augments or [image]
 
 
-def save_augmented_images(images, paths, output_dir="data/augmented", size=(224, 224)):
-    os.makedirs(output_dir, exist_ok=True)
-    label_file_path = os.path.join(output_dir, "labels.csv")
+def save_augmented_images(images, paths, output_dir=AUGMENTED_DIR, size=(224, 224)):
     # Ta del kode izvaja augmentacijo (povečanje) podatkov in shrani tako spremenjene slike kot tudi njihove oznake.
     # Ustvari CSV datoteko ('labels.csv'), kjer vsaka vrstica vsebuje:
     #   - ime shranjene augmentirane slike
     #   - pripadajočo oznako (ID uporabnika oz. razred), ki se določi glede na ime nadrejenega imenika originalne slike.
-    # To omogoča enostavno uporabo slik pri nadzorovanem učenju (npr. za klasifikacijo).
-
-    with open(label_file_path, mode='w', newline='') as f:
-        writer = csv.writer(f)
-        writer.writerow(["filename", "label"])
-
-        for img, original_path in zip(images, paths):
-            label = Path(original_path).parent.name
-            filename = Path(original_path).stem
-            aug_versions = augment_image(img)
-
-            for i, aug_img in enumerate(aug_versions):
-                aug_img = resize_image(aug_img, size)
-                output_name = f"{filename}_aug{i}.jpg"
-                output_path = os.path.join(output_dir, output_name)
-                cv2.imwrite(output_path, aug_img)
-                writer.writerow([output_name, label])
-
+    # To omogoča enostavno uporabo slik pri nadzorovanem učenju (npr. za klasifikacijo)
+      output_dir.mkdir(parents=True, exist_ok=True)
+      label_file_path = output_dir / "labels.csv"
+      with label_file_path.open(mode='w', newline='') as f:
+          writer = csv.writer(f)
+          writer.writerow(["filename", "label"])
+          for img, original_path in zip(images, paths):
+              label = original_path.parent.name
+              filename = original_path.stem
+              for i, aug_img in enumerate(augment_image(img)):
+                  aug_img = resize_image(aug_img, size)
+                  output_name = f"{filename}_aug{i}.jpg"
+                  output_path = output_dir / output_name
+                  cv2.imwrite(str(output_path), aug_img)
+                  writer.writerow([output_name, label])
+                  
 if __name__ == "__main__":
     images, paths = load_images("data/raw/1")  # or another user's folder
     save_augmented_images(images, paths)
