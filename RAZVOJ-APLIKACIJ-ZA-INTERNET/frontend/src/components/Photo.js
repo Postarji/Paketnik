@@ -7,7 +7,7 @@ function Photo({ photo, showDetails }) {
     const [likes, setLikes] = useState((photo.likes || []).length);
     const [dislikes, setDislikes] = useState((photo.dislikes || []).length);
     const [flags, setFlags] = useState((photo.flags || []).length);
-    const [isHidden, setIsHidden] = useState(flags >= 1);// Če flag se objava skrije
+    const [isHidden, setIsHidden] = useState(flags >= 10); // Changed threshold to 10
     const userContext = useContext(UserContext);
     const navigate = useNavigate();
 
@@ -54,7 +54,7 @@ function Photo({ photo, showDetails }) {
     const handleFlag = async (e) => {
         e.stopPropagation();
         if (!userContext.user) {
-            alert('Please login to flag photos');
+            alert('Please login to flag posts');
             return;
         }
 
@@ -69,20 +69,20 @@ function Photo({ photo, showDetails }) {
                 // Update the flags count from the response
                 const newFlagCount = (updatedPhoto.flags || []).length;
                 setFlags(newFlagCount);
-                if (newFlagCount >= 1) {
+                if (newFlagCount >= 10) {
                     setIsHidden(true);
                 }
             } else {
                 const error = await res.json();
                 if (error.message === 'User not logged in') {
-                    alert('Please login to flag photos');
+                    alert('Please login to flag posts');
                 } else {
-                    alert(error.message || 'Error flagging photo');
+                    alert(error.message || 'Error flagging post');
                 }
             }
         } catch (error) {
             console.error('Error:', error);
-            alert('Error flagging photo');
+            alert('Error flagging post');
         }
     };
 
@@ -100,12 +100,28 @@ function Photo({ photo, showDetails }) {
         );
     };
 
+    const renderFlagWarning = () => {
+        if (flags >= 5 && flags < 10) {
+            return (
+                <div className="alert alert-warning mt-2" role="alert">
+                    <small>
+                        This post has {flags} reports. It will be hidden at 10 reports.
+                    </small>
+                </div>
+            );
+        }
+        return null;
+    };
+
     // Return early if photo is hidden
     if (isHidden) {
         return (
             <div className="card mb-4">
                 <div className="card-body">
-                    <p className="text-muted">This content has been hidden due to user reports.</p>
+                    <p className="text-muted text-center">
+                        <i className="bi bi-eye-slash me-2"></i>
+                        This post has been hidden due to receiving 10 or more reports.
+                    </p>
                 </div>
             </div>
         );
@@ -114,7 +130,9 @@ function Photo({ photo, showDetails }) {
     // Format the image URL correctly
     const imageUrl = photo.path.startsWith('http') 
         ? photo.path 
-        : `http://localhost:3001${photo.path}`; // Add the full base URL
+        : photo.path.startsWith('/') 
+            ? `http://localhost:3001${photo.path}`
+            : `http://localhost:3001/${photo.path}`;
 
     return (
         <div className="card mb-4" onClick={() => !showDetails && navigate(`/photo/${photo._id}`)}>
@@ -124,8 +142,8 @@ function Photo({ photo, showDetails }) {
                 className="card-img-top"
                 style={{ 
                     cursor: showDetails ? 'default' : 'pointer',
-                    height: '300px', // Set a fixed height
-                    objectFit: 'cover' // Maintain aspect ratio while covering the space
+                    height: '300px',
+                    objectFit: 'cover'
                 }}
                 onError={(e) => {
                     console.error('Error loading image:', imageUrl);
@@ -136,6 +154,7 @@ function Photo({ photo, showDetails }) {
                 {renderTimestamps()}
                 <h5 className="card-title">{photo.name}</h5>
                 <p className="card-text">{photo.message}</p>
+                {renderFlagWarning()}
                 
                 <div className="d-flex justify-content-between align-items-center">
                     <div className="btn-group">
@@ -146,7 +165,7 @@ function Photo({ photo, showDetails }) {
                             <i className="bi bi-hand-thumbs-down"></i> {dislikes}
                         </button>
                         <button onClick={(e) => handleFlag(e)} className="btn btn-outline-warning">
-                            <i className="bi bi-flag"></i> Report
+                            <i className="bi bi-flag"></i> Report {flags > 0 ? `(${flags})` : ''}
                         </button>
                     </div>
                     <small className="text-muted">Posted by: {photo.postedBy?.username}</small>

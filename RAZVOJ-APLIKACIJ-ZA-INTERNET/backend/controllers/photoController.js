@@ -24,7 +24,12 @@ module.exports = {
                     error: err
                 });
             }
-            return res.json(photos);
+            // Filter out photos that have 10 or more flags, except for owners viewing their own posts
+            const filteredPhotos = photos.filter(photo => {
+                const flagCount = (photo.flags || []).length;
+                return flagCount < 10 || (req.session.userId && photo.postedBy._id.toString() === req.session.userId);
+            });
+            return res.json(filteredPhotos);
         });
     },
 
@@ -58,14 +63,21 @@ module.exports = {
      * photoController.create()
      */
     create: function (req, res) {
+        // Ensure the path is consistently formatted
+        const imagePath = req.file.filename.startsWith('images/') 
+            ? req.file.filename 
+            : `images/${req.file.filename}`;
+
         var photo = new PhotoModel({
-            name : req.body.name,
+            name: req.body.name,
             message: req.body.message,
-            path : "/images/"+req.file.filename,
-            postedBy : req.session.userId,
-            views : 0,
-            likes : [],
-            dislikes : []
+            path: imagePath,
+            postedBy: req.session.userId,
+            views: 0,
+            likes: [],
+            dislikes: [],
+            flags: [],
+            createdAt: new Date()
         });
 
         photo.save(function (err, photo) {
@@ -139,53 +151,17 @@ module.exports = {
      * photoController.remove()
      */
     remove: function (req, res) {
-        // Check if user is logged in
-        if (!req.session.userId) {
-            return res.status(401).json({ message: 'Not authorized' });
-        }
-
         var id = req.params.id;
 
-        // First find the photo to check ownership and get file path
-        PhotoModel.findOne({
-            _id: id,
-            postedBy: req.session.userId // Ensure user is the owner
-        }, function(err, photo) {
+        PhotoModel.findByIdAndRemove(id, function (err, photo) {
             if (err) {
                 return res.status(500).json({
-                    message: 'Error finding photo',
+                    message: 'Error when deleting the photo.',
                     error: err
                 });
             }
 
-            if (!photo) {
-                return res.status(404).json({
-                    message: 'No such photo or not authorized'
-                });
-            }
-
-            // Get the file path to delete the image
-            const imagePath = path.join(__dirname, '../public', photo.path);
-
-            // Delete the photo from database
-            PhotoModel.findByIdAndRemove(id, function (err) {
-                if (err) {
-                    return res.status(500).json({
-                        message: 'Error when deleting the photo.',
-                        error: err
-                    });
-                }
-
-                // Delete the image file
-                fs.unlink(imagePath, (err) => {
-                    if (err) {
-                        console.error('Error deleting image file:', err);
-                        // We don't return error here as the database delete was successful
-                    }
-                });
-
-                return res.status(204).json();
-            });
+            return res.status(204).json();
         });
     },
 
@@ -321,7 +297,12 @@ module.exports = {
                     error: err
                 });
             }
-            return res.json(photos);
+            // Filter out photos that have 10 or more flags, except for owners viewing their own posts
+            const filteredPhotos = photos.filter(photo => {
+                const flagCount = (photo.flags || []).length;
+                return flagCount < 10 || (req.session.userId && photo.postedBy._id.toString() === req.session.userId);
+            });
+            return res.json(filteredPhotos);
         });
     }
 };
