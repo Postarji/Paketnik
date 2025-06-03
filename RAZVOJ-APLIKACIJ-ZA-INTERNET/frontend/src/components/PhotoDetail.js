@@ -7,6 +7,7 @@ function PhotoDetail() {
     const [photo, setPhoto] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const { id } = useParams();
     const navigate = useNavigate();
     const userContext = useContext(UserContext);
@@ -32,6 +33,25 @@ function PhotoDetail() {
         };
         getPhoto();
     }, [id]);
+
+    const handleDelete = async () => {
+        try {
+            const res = await fetch(`http://localhost:3001/photos/${id}`, {
+                method: 'DELETE',
+                credentials: 'include'
+            });
+
+            if (res.ok) {
+                navigate('/'); // Redirect to homepage after successful delete
+            } else {
+                const error = await res.json();
+                setError(error.message || 'Error deleting photo');
+            }
+        } catch (err) {
+            console.error('Error:', err);
+            setError('Error deleting photo');
+        }
+    };
 
     if (loading) {
         return (
@@ -67,14 +87,43 @@ function PhotoDetail() {
                     Back to Photos
                 </button>
                 {isOwner && (
-                    <button 
-                        onClick={() => navigate(`/photo/edit/${id}`)} 
-                        className="btn btn-primary"
-                    >
-                        Edit Book
-                    </button>
+                    <div className="btn-group">
+                        <button 
+                            onClick={() => navigate(`/photo/edit/${id}`)} 
+                            className="btn btn-primary"
+                        >
+                            Edit Book
+                        </button>
+                        <button 
+                            onClick={() => setShowDeleteConfirm(true)} 
+                            className="btn btn-danger"
+                        >
+                            Delete Book
+                        </button>
+                    </div>
                 )}
             </div>
+            
+            {showDeleteConfirm && (
+                <div className="alert alert-warning mb-3">
+                    <p>Are you sure you want to delete this book? This action cannot be undone.</p>
+                    <div className="d-flex gap-2">
+                        <button 
+                            className="btn btn-danger" 
+                            onClick={handleDelete}
+                        >
+                            Yes, Delete
+                        </button>
+                        <button 
+                            className="btn btn-secondary" 
+                            onClick={() => setShowDeleteConfirm(false)}
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            )}
+
             <Photo photo={photo} showDetails={true} />
         </div>
     );

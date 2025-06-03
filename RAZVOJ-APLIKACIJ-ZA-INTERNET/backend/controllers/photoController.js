@@ -139,17 +139,53 @@ module.exports = {
      * photoController.remove()
      */
     remove: function (req, res) {
+        // Check if user is logged in
+        if (!req.session.userId) {
+            return res.status(401).json({ message: 'Not authorized' });
+        }
+
         var id = req.params.id;
 
-        PhotoModel.findByIdAndRemove(id, function (err, photo) {
+        // First find the photo to check ownership and get file path
+        PhotoModel.findOne({
+            _id: id,
+            postedBy: req.session.userId // Ensure user is the owner
+        }, function(err, photo) {
             if (err) {
                 return res.status(500).json({
-                    message: 'Error when deleting the photo.',
+                    message: 'Error finding photo',
                     error: err
                 });
             }
 
-            return res.status(204).json();
+            if (!photo) {
+                return res.status(404).json({
+                    message: 'No such photo or not authorized'
+                });
+            }
+
+            // Get the file path to delete the image
+            const imagePath = path.join(__dirname, '../public', photo.path);
+
+            // Delete the photo from database
+            PhotoModel.findByIdAndRemove(id, function (err) {
+                if (err) {
+                    return res.status(500).json({
+                        message: 'Error when deleting the photo.',
+                        error: err
+                    });
+                }
+
+                // Delete the image file
+                fs.unlink(imagePath, (err) => {
+                    if (err) {
+                        console.error('Error deleting image file:', err);
+                        // We don't return error here as the database delete was successful
+                    }
+                });
+
+                return res.status(204).json();
+            });
         });
     },
 
