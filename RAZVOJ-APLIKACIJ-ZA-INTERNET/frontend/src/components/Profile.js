@@ -46,6 +46,20 @@ function Profile() {
         getProfile();
     }, []);
 
+    const getImageUrl = (photo) => {
+        // If path already contains the full URL, use it
+        if (photo.path.startsWith('http')) {
+            return photo.path;
+        }
+        // If path starts with /images/, remove the leading slash
+        const imagePath = photo.path.startsWith('/images/') 
+            ? photo.path.substring(1) 
+            : photo.path.startsWith('images/') 
+                ? photo.path 
+                : `images/${photo.path}`;
+        return `http://localhost:3001/${imagePath}`;
+    };
+
     if (!userContext.user) {
         return <Navigate replace to="/login" />;
     }
@@ -123,17 +137,21 @@ function Profile() {
                                         <div key={photo._id} className="col">
                                             <div className="card h-100">
                                                 <img 
-                                                    src={`http://localhost:3001/images/${photo.path}`}
+                                                    src={getImageUrl(photo)}
                                                     className="card-img-top"
                                                     alt={photo.name}
                                                     style={{ height: '200px', objectFit: 'cover' }}
+                                                    onError={(e) => {
+                                                        console.error('Error loading image:', getImageUrl(photo));
+                                                        e.target.src = 'https://via.placeholder.com/300?text=Book+Image+Not+Available';
+                                                    }}
                                                 />
                                                 <div className="card-body">
                                                     <h5 className="card-title">{photo.name}</h5>
                                                     <p className="card-text">{photo.message}</p>
                                                     <div className="d-flex justify-content-between align-items-center">
                                                         <small className="text-muted">
-                                                            {new Date(photo.postedAt).toLocaleDateString()}
+                                                            {new Date(photo.createdAt).toLocaleDateString()}
                                                         </small>
                                                         <div>
                                                             <span className="me-2">
