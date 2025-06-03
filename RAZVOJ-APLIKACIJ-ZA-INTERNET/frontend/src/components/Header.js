@@ -15,6 +15,7 @@ function Header(props) {
                 </div>
                 <nav className="nav-links">
                     <Link to='/' className="nav-link">Home</Link>
+                    <Link to='/about-us' className="nav-link">About Us</Link>
                     {userContext.user ? (
                         <>
                             <Link to='/publish' className="nav-link">Publish</Link>
