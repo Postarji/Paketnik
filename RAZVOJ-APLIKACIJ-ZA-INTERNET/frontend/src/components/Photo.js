@@ -11,6 +11,18 @@ function Photo({ photo, showDetails }) {
     const userContext = useContext(UserContext);
     const navigate = useNavigate();
 
+    // Format date helper function
+    const formatDate = (dateString) => {
+        const options = { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        };
+        return new Date(dateString).toLocaleDateString('en-US', options);
+    };
+
     const handleVote = async (type, e) => {
         e.stopPropagation();
         if (!userContext.user) {
@@ -74,76 +86,74 @@ function Photo({ photo, showDetails }) {
         }
     };
 
-    const handleClick = () => {
-        if (!showDetails) {
-            navigate(`/photo/${photo._id}`);
-        }
+    const renderTimestamps = () => {
+        const posted = formatDate(photo.createdAt);
+        const updated = photo.updatedAt ? formatDate(photo.updatedAt) : null;
+        
+        return (
+            <div className="text-muted small mb-2">
+                <div>Posted: {posted}</div>
+                {updated && updated !== posted && (
+                    <div>Last updated: {updated}</div>
+                )}
+            </div>
+        );
     };
 
+    // Return early if photo is hidden
     if (isHidden) {
         return (
-            <div className="photo-card fade-in">
-                <div className="p-4 text-center">
-                    <p className="text-muted">This photo has been hidden due to report.</p>
+            <div className="card mb-4">
+                <div className="card-body">
+                    <p className="text-muted">This content has been hidden due to user reports.</p>
                 </div>
             </div>
         );
     }
 
+    // Format the image URL correctly
+    const imageUrl = photo.path.startsWith('http') 
+        ? photo.path 
+        : `http://localhost:3001${photo.path}`; // Add the full base URL
+
     return (
-        <div
-            className={`photo-card fade-in ${!showDetails ? 'clickable' : ''}`}
-            onClick={handleClick}
-            style={{ cursor: !showDetails ? 'pointer' : 'default' }}
-        >
-            <div className="photo-image">
-                <img
-                    src={`http://localhost:3001${photo.path}`}
-                    alt={photo.name}
-                    loading="lazy"
-                />
-            </div>
-            <div className="photo-info">
-                <h3 className="photo-title">{photo.name}</h3>
-                {showDetails && (
-                    <>
-                        <p className="photo-meta">
-                            <span>By {photo.postedBy?.username || "Unknown"}</span>
-                            <span>{new Date(photo.createdAt).toLocaleDateString()}</span>
-                        </p>
-                        {photo.message && (
-                            <p className="photo-description">{photo.message}</p>
-                        )}
-                    </>
-                )}
-                <div className="photo-stats">
-                    <span>👍 {likes}</span>
-                    <span>👎 {dislikes}</span>
-                    <span>🚩 {flags}</span>
+        <div className="card mb-4" onClick={() => !showDetails && navigate(`/photo/${photo._id}`)}>
+            <img 
+                src={imageUrl}
+                alt={photo.name}
+                className="card-img-top"
+                style={{ 
+                    cursor: showDetails ? 'default' : 'pointer',
+                    height: '300px', // Set a fixed height
+                    objectFit: 'cover' // Maintain aspect ratio while covering the space
+                }}
+                onError={(e) => {
+                    console.error('Error loading image:', imageUrl);
+                    e.target.src = 'https://via.placeholder.com/300?text=Book+Image+Not+Available';
+                }}
+            />
+            <div className="card-body">
+                {renderTimestamps()}
+                <h5 className="card-title">{photo.name}</h5>
+                <p className="card-text">{photo.message}</p>
+                
+                <div className="d-flex justify-content-between align-items-center">
+                    <div className="btn-group">
+                        <button onClick={(e) => handleVote('like', e)} className="btn btn-outline-primary">
+                            <i className="bi bi-hand-thumbs-up"></i> {likes}
+                        </button>
+                        <button onClick={(e) => handleVote('dislike', e)} className="btn btn-outline-danger">
+                            <i className="bi bi-hand-thumbs-down"></i> {dislikes}
+                        </button>
+                        <button onClick={(e) => handleFlag(e)} className="btn btn-outline-warning">
+                            <i className="bi bi-flag"></i> Report
+                        </button>
+                    </div>
+                    <small className="text-muted">Posted by: {photo.postedBy?.username}</small>
                 </div>
-                <div className="photo-actions">
-                    <button
-                        onClick={(e) => handleVote('like', e)}
-                        className="btn btn-success btn-sm me-2"
-                    >
-                        Like
-                    </button>
-                    <button
-                        onClick={(e) => handleVote('dislike', e)}
-                        className="btn btn-danger btn-sm me-2"
-                    >
-                        Dislike
-                    </button>
-                    <button
-                        onClick={handleFlag}
-                        className="btn btn-warning btn-sm"
-                        title="Report inappropriate content"
-                    >
-                        Report
-                    </button>
-                </div>
+
+                {showDetails && <Comments photoId={photo._id} />}
             </div>
-            {showDetails && <Comments photoId={photo._id} />}
         </div>
     );
 }

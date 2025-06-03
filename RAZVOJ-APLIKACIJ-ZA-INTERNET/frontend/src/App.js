@@ -8,6 +8,7 @@ import Register from "./components/Register";
 import Profile from "./components/Profile";
 import Logout from "./components/Logout";
 import AddPhoto from "./components/AddPhoto";
+import EditPhoto from "./components/EditPhoto";
 import PhotoDetail from "./components/PhotoDetail";
 import AboutUs from "./components/AboutUs";
 
@@ -56,6 +57,7 @@ function App() {
             <Route path="/profile" element={<Profile />}></Route>
             <Route path="/logout" element={<Logout />}></Route>
             <Route path="/photo/:id" element={<PhotoDetail />}></Route>
+            <Route path="/photo/edit/:id" element={<EditPhoto />}></Route>
             <Route path="/about-us" element={<AboutUs />}></Route>
           </Routes>
         </div>
