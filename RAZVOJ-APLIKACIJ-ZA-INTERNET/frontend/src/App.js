@@ -11,6 +11,9 @@ import AddPhoto from "./components/AddPhoto";
 import EditPhoto from "./components/EditPhoto";
 import PhotoDetail from "./components/PhotoDetail";
 import AboutUs from "./components/AboutUs";
+import BoxList from "./components/BoxList";
+import BoxAdd from "./components/BoxAdd";
+import BoxLogs from "./components/BoxLogs";
 
 function App() {
   /**
@@ -55,10 +58,12 @@ function App() {
             <Route path="/register" element={<Register />}></Route>
             <Route path="/publish" element={<AddPhoto />}></Route>
             <Route path="/profile" element={<Profile />}></Route>
-            <Route path="/logout" element={<Logout />}></Route>
-            <Route path="/photo/:id" element={<PhotoDetail />}></Route>
+            <Route path="/logout" element={<Logout />}></Route>          <Route path="/photo/:id" element={<PhotoDetail />}></Route>
             <Route path="/photo/edit/:id" element={<EditPhoto />}></Route>
             <Route path="/about-us" element={<AboutUs />}></Route>
+            <Route path="/boxes" element={<BoxList />}></Route>
+            <Route path="/boxes/add" element={<BoxAdd />}></Route>
+            <Route path="/boxes/:id/logs" element={<BoxLogs />}></Route>
           </Routes>
         </div>
       </UserContext.Provider>
