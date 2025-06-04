@@ -3,9 +3,9 @@ import { UserContext } from '../userContext';
 import { Navigate, Link } from 'react-router-dom';
 
 function Profile() {
-    const userContext = useContext(UserContext);
-    const [profile, setProfile] = useState({});
+    const userContext = useContext(UserContext);    const [profile, setProfile] = useState({});
     const [userPhotos, setUserPhotos] = useState([]);
+    const [boxes, setBoxes] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('posts'); // 'posts' or 'boxes'
 
@@ -25,18 +25,21 @@ function Profile() {
                     fetch("http://localhost:3001/boxes", {
                         credentials: "include"
                     })
-                ]);
-
-                // Convert responses to JSON
+                ]);                // Convert responses to JSON
                 const profileData = await profileRes.json();
                 const photosData = await photosRes.json();
                 const boxesData = await boxesRes.json();
 
                 // Save profile data
-                setProfile(profileData);
-                setUserPhotos(photosData.filter(photo => 
-                    photo.postedBy?._id === profileData._id
-                ));
+                if (profileData && profileData._id) {
+                    setProfile(profileData);
+                    setUserPhotos(photosData.filter(photo => 
+                        photo.postedBy?._id === profileData._id
+                    ));
+                    setBoxes(boxesData);
+                } else {
+                    console.error('Invalid profile data received');
+                }
             } catch (error) {
                 console.error('Error fetching profile data:', error);
             } finally {
@@ -175,10 +178,52 @@ function Profile() {
                                             </Link>
                                         </div>
                                     )}
-                                </div>
-                            ) : (
-                                <div className="text-center">
-                                    <p>Box management coming soon!</p>
+                                </div>                            ) : (
+                                <div className="boxes-grid">
+                                    {boxes.length > 0 ? (
+                                        <div className="row row-cols-1 row-cols-md-2 g-4">
+                                            {boxes.map(box => (
+                                                <div key={box._id} className="col">
+                                                    <div className="card h-100">
+                                                        <div className="card-body">
+                                                            <h5 className="card-title">{box.name}</h5>
+                                                            <p className="card-text">
+                                                                <small className="text-muted">
+                                                                    Location: {box.location || 'Not specified'}
+                                                                </small>
+                                                            </p>
+                                                            <p className="card-text">
+                                                                <small className="text-muted">
+                                                                    Shared with: {box.allowedUsers.length} users
+                                                                </small>
+                                                            </p>
+                                                        </div>
+                                                        <div className="card-footer bg-transparent">
+                                                            <div className="d-flex justify-content-between">
+                                                                <Link to={`/boxes/${box._id}/logs`} 
+                                                                      className="btn btn-outline-primary btn-sm">
+                                                                    <i className="bi bi-clock-history me-1"></i>
+                                                                    View Logs
+                                                                </Link>
+                                                                <Link to={`/boxes/${box._id}/edit`} 
+                                                                      className="btn btn-outline-secondary btn-sm">
+                                                                    <i className="bi bi-pencil me-1"></i>
+                                                                    Edit
+                                                                </Link>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="text-center">
+                                            <p className="text-muted">You don't have any parcel lockers yet.</p>
+                                            <Link to="/boxes/add" className="btn btn-primary">
+                                                Add Your First Box
+                                            </Link>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>
