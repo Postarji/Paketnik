@@ -90,7 +90,7 @@ async def initiate_2fa_request(user_id: str):
     # API generira nekakšen "izziv" ali sejo.
     import uuid
     challenge_id = str(uuid.uuid4())
-    pending_logins[challenge_id] = {"user_id": user_id, "verified": False}
+    pending_logins[challenge_id] = {"user_id": user_id, "verified": False, "mock": True}#TODO to kasneje ZBRIŠI samo placeholder za testing
     # Tukaj bi Član 1 sprožil potisno obvestilo na mobilno aplikacijo s tem challenge_id.
     return JSONResponse(content={"message": f"2FA initiated for {user_id}. Challenge ID: {challenge_id}", "challenge_id": challenge_id})
 
