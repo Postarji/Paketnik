@@ -48,19 +48,23 @@ def resize_image(image, size=(224, 224)):
     return cv2.resize(image, size)
 
 
-def augment_image(image):
+def augment_image(image, count=4):
     augments = []
 
-    if random.random() < 0.5:
-        augments.append(flip_image(image))
-    if random.random() < 0.5:
-        augments.append(rotate_image(image, random.choice([-15, 15])))
-    if random.random() < 0.5:
-        augments.append(change_brightness(image, random.randint(-40, 40)))
-    if random.random() < 0.5:
-        augments.append(add_gaussian_noise(image))
+    while len(augments) < count:
+        aug_img = image.copy()
+        if random.random() < 0.5:
+            aug_img = flip_image(aug_img)
+        if random.random() < 0.5:
+            aug_img = rotate_image(aug_img, random.choice([-15, 15]))
+        if random.random() < 0.5:
+            aug_img = change_brightness(aug_img, random.randint(-40, 40))
+        if random.random() < 0.5:
+            aug_img = add_gaussian_noise(aug_img)
 
-    return augments or [image]
+        augments.append(aug_img)
+
+    return augments[:count]
 
 
 def save_augmented_images(images, paths, output_dir=AUGMENTED_DIR, size=(224, 224)):
@@ -83,6 +87,7 @@ def save_augmented_images(images, paths, output_dir=AUGMENTED_DIR, size=(224, 22
                   output_path = output_dir / output_name
                   cv2.imwrite(str(output_path), aug_img)
                   writer.writerow([output_name, label])
+                  
                   
 if __name__ == "__main__":
     images, paths = load_images("data/raw/1")  # or another user's folder

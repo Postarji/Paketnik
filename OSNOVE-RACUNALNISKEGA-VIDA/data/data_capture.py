@@ -71,16 +71,19 @@ def save_face(face_img, output_path, size=(224, 224), color_space='grayscale'):
     resized = cv2.resize(preprocessed, size)
     cv2.imwrite(output_path, resized)
     
-def save_metadata(user_id, count, path="metadata.json"):
-    data = {
+def save_metadata(user_id, count, path=None):
+    if path is None:
+        path = ensure_user_dir(user_id) / "metadata.json"
+    metadata = {
         "user_id": user_id,
         "images_captured": count,
         "timestamp": datetime.now().isoformat(),
         "image_size": "224x224",
-        "format": "jpg",
+        "format": "jpg"
     }
     with open(path, "w") as f:
-        json.dump(data, f, indent=4)
+        json.dump(metadata, f, indent=4)
+
 
 def capture_images(user_id, output_dir=RAW_DIR, count=50, color_space='grayscale'):
     cap = cv2.VideoCapture(0)
