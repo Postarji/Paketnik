@@ -12,6 +12,6 @@ router.delete('/:id', requireAdmin, boxController.remove);
 
 // Box unlock operations
 router.post('/:id/unlock', boxController.logUnlock);
-router.get('/:id/history', boxController.getUnlockHistory);
+router.get('/:id/unlock-history', boxController.getUnlockHistory);
 
 module.exports = router;
