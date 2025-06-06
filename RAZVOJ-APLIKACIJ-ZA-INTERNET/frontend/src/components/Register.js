@@ -10,24 +10,30 @@ function Register() {
 
     async function Register(e) {
         e.preventDefault();
-        const res = await fetch("http://localhost:3001/users", {
-            method: 'POST',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                email: email,
-                username: username,
-                password: password
-            })
-        });
-        const data = await res.json();
-        if (data._id !== undefined) {
-            navigate('/login');
-        } else {
-            setUsername("");
-            setPassword("");
-            setEmail("");
-            setError("Registration failed");
+        setError("");
+        
+        try {
+            const res = await fetch("http://localhost:3001/users", {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: email,
+                    username: username,
+                    password: password
+                })
+            });
+            
+            const data = await res.json();
+            
+            if (res.ok) {
+                navigate('/login');
+            } else {
+                // Display the specific error message from the server
+                setError(data.message || "Registration failed");
+            }
+        } catch (err) {
+            setError("Network error. Please try again.");
         }
     }
 

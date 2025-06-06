@@ -69,18 +69,22 @@ function BoxList() {
         <div className="container mt-4">
             <div className="d-flex justify-content-between align-items-center mb-4">
                 <h2>My Smart Parcel Lockers</h2>
-                <Link to="/boxes/add" className="btn btn-primary">
-                    <i className="bi bi-plus-circle me-2"></i>
-                    Add New Box
-                </Link>
+                {userContext.user?.role === 'admin' && (
+                    <Link to="/boxes/add" className="btn btn-primary">
+                        <i className="bi bi-plus-circle me-2"></i>
+                        Add New Box
+                    </Link>
+                )}
             </div>
             
             {boxes.length === 0 ? (
                 <div className="text-center">
                     <p className="text-muted">You don't have any parcel lockers yet.</p>
-                    <Link to="/boxes/add" className="btn btn-primary">
-                        Add Your First Box
-                    </Link>
+                    {userContext.user?.role === 'admin' && (
+                        <Link to="/boxes/add" className="btn btn-primary">
+                            Add Your First Box
+                        </Link>
+                    )}
                 </div>
             ) : (
                 <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
@@ -106,10 +110,12 @@ function BoxList() {
                                             <i className="bi bi-clock-history me-1"></i>
                                             View Logs
                                         </Link>
-                                        <Link to={`/boxes/${box._id}/edit`} className="btn btn-outline-secondary btn-sm">
-                                            <i className="bi bi-pencil me-1"></i>
-                                            Edit
-                                        </Link>
+                                        {userContext.user?.role === 'admin' && (
+                                            <Link to={`/boxes/${box._id}/edit`} className="btn btn-outline-secondary btn-sm">
+                                                <i className="bi bi-pencil me-1"></i>
+                                                Edit
+                                            </Link>
+                                        )}
                                     </div>
                                 </div>
                             </div>
