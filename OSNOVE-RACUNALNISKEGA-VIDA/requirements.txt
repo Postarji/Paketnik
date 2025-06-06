@@ -7,3 +7,6 @@ Pillow
 pymongo
 python-dotenv
 python-multipart 
+tensorflow>=2.10 
+scikit-learn
+matplotlib
