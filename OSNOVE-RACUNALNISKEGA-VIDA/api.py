@@ -108,15 +108,19 @@ async def verify_face(challenge_id: str, file: UploadFile = File(None)):#File je
     expected_user_id = pending_logins[challenge_id]["user_id"]
     
     #----MOCK LOGIKA----#
-    # MOCK LOGIKA: Vedno uspešno, če je 'mock' flag postavljen
+    # Vedno uspešno, če je 'mock' flag postavljen
     if pending_logins[challenge_id].get("mock"):
         pending_logins[challenge_id]["verified"] = True
         pending_logins[challenge_id]["verified_user"] = expected_user_id # Uporabimo user_id iz initiate_2fa
 
+        print(f"[MOCK API] User {expected_user_id} verified successfully for challenge {challenge_id} (mocked).")
+        if file:
+            # Kljub mocku shranimo sliko, če je poslana, za kasnejšo analizo/debug
+            contents = await file.read()
+            print(f"[MOCK API] Received image of size {len(contents)} for challenge {challenge_id}, but verification is mocked.")
 
 
-
-
+    #-----------------#
     try:
         contents = await file.read()
         image_pil = Image.open(io.BytesIO(contents)) # PIL slika
