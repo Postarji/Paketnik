@@ -189,7 +189,9 @@ async def check_2fa_status(challenge_id: str):
     
     # DODAJANJE NOVE KONČNE TOČKE ZA "REGISTRACIJO OBRAZA" PREKO SPLETNE STRANI
     # To je ločeno od 2FA verifikacije. To je za ČLANA 1 in ČLANA 2 za pripravo podatkov.
-    REGISTRATION_IMAGE_PATH = Path("/app/data/web_captured_raw") # Prilagodit po potrebi v config.py DOCKER (docker-compose.yml)
+REGISTRATION_IMAGE_PATH = Path("/app/data/web_captured_raw") # Prilagodit po potrebi v config.py DOCKER (docker-compose.yml)
     
     
-    @app.post("/web_register_face/{user_id}")
+@app.post("/web_register_face/{user_id}")
+async def web_register_face(user_id: str, file: UploadFile = File(...)):
+    
