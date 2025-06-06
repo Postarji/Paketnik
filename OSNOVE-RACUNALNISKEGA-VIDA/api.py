@@ -118,7 +118,13 @@ async def verify_face(challenge_id: str, file: UploadFile = File(None)):#File je
             # Kljub mocku shranimo sliko, če je poslana, za kasnejšo analizo/debug
             contents = await file.read()
             print(f"[MOCK API] Received image of size {len(contents)} for challenge {challenge_id}, but verification is mocked.")
-
+       
+        return JSONResponse(content={
+            "message": "User verified successfully (mocked).",
+            "verified_user": expected_user_id,
+            "expected_user": expected_user_id,
+            "confidence": 1.0 # Mock confidence
+        })
 
     #-----------------#
     try:
