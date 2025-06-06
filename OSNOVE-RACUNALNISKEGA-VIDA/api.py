@@ -9,6 +9,8 @@ import io
 import cv2
 import os 
 from dotenv import load_dotenv
+from datetime import datetime
+
 
 dotenv_path = os.path.join(os.path.dirname(__file__), 'apiMongo.env') # Pravilno poišče datoteko
 if os.path.exists(dotenv_path):
@@ -184,3 +186,6 @@ async def check_2fa_status(challenge_id: str):
         #lahko tudi timeout
         print(f"[MOCK API] Status for {challenge_id} is PENDING.")
         return JSONResponse(content={"status": "PENDING"})
+    
+    # DODAJANJE NOVE KONČNE TOČKE ZA "REGISTRACIJO OBRAZA" PREKO SPLETNE STRANI
+    # To je ločeno od 2FA verifikacije. To je za ČLANA 1 in ČLANA 2 za pripravo podatkov.
