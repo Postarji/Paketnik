@@ -194,4 +194,10 @@ REGISTRATION_IMAGE_PATH = Path("/app/data/web_captured_raw") # Prilagodit po pot
     
 @app.post("/web_register_face/{user_id}")
 async def web_register_face(user_id: str, file: UploadFile = File(...)):
-    
+    user_dir = REGISTRATION_IMAGE_PATH / user_id
+    user_dir.mkdir(parents=True, exist_ok=True) # Ustvari mapo, če ne obstaja
+
+    # Preveri, ali je datoteka dejansko slika (osnovno preverjanje tipa vsebine)
+    if not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="Invalid file type. Only images are allowed.")
+
