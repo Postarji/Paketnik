@@ -178,7 +178,9 @@ async def check_2fa_status(challenge_id: str):
     
     status = pending_logins[challenge_id]
     if status.get("verified"):
+        print(f"[MOCK API] Status for {challenge_id} is VERIFIED for user {status.get('verified_user')}.")#kasneje zbriši
         return JSONResponse(content={"status": "VERIFIED", "user_id": status.get("verified_user")})
     else:
         #lahko tudi timeout
+        print(f"[MOCK API] Status for {challenge_id} is PENDING.")
         return JSONResponse(content={"status": "PENDING"})
