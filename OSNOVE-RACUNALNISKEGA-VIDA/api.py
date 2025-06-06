@@ -204,3 +204,12 @@ async def web_register_face(user_id: str, file: UploadFile = File(...)):
     timestamp = datetime.now().strftime('%Y%m%d%H%M%S%f') # Dodajmo milisekunde za unikatnost
     file_location = user_dir / f"{user_id}_web_{timestamp}.jpg" # Shranjujemo kot jpg
 
+    try:
+        contents = await file.read()
+        # Preverjanje, če je vsebina prazna
+        if not contents:
+            raise HTTPException(status_code=400, detail="Uploaded file is empty.")
+
+        # Shranjevanje
+        with open(file_location, "wb+") as file_object:
+            file_object.write(contents)
