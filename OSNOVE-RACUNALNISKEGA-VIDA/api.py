@@ -213,3 +213,8 @@ async def web_register_face(user_id: str, file: UploadFile = File(...)):
         # Shranjevanje
         with open(file_location, "wb+") as file_object:
             file_object.write(contents)
+
+        # Tukaj bi lahko posodobili MongoDB, da označite, da ima uporabnik registriran obraz
+        # users_collection.update_one({"username": user_id}, {"$set": {"has_face_id_from_web": True, "face_id_path": str(file_location)}}, upsert=True)
+        print(f"[API] Web face registration image for {user_id} saved to {file_location}")
+        return {"message": f"Face registration image for {user_id} via web saved successfully.", "path": str(file_location)}
