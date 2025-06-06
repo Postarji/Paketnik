@@ -75,6 +75,16 @@ function BoxEdit() {
         );
     }
 
+    if (userContext.user.role !== 'admin') {
+        return (
+            <div className="container mt-4">
+                <div className="alert alert-danger">
+                    Only administrators can edit parcel lockers.
+                </div>
+            </div>
+        );
+    }
+
     if (loading) {
         return (
             <div className="container mt-4">

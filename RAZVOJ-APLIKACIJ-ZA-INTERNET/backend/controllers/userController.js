@@ -50,24 +50,50 @@ module.exports = {
     /**
      * userController.create()
      */
-    create: function (req, res) {
-        var user = new UserModel({
-			username : req.body.username,
-			password : req.body.password,
-			email : req.body.email
-        });
+    create: async function (req, res) {
+        try {
+            // Check if username already exists
+            const existingUser = await UserModel.findOne({ 
+                $or: [
+                    { username: req.body.username },
+                    { email: req.body.email }
+                ]
+            });
 
-        user.save(function (err, user) {
-            if (err) {
-                return res.status(500).json({
-                    message: 'Error when creating user',
-                    error: err
-                });
+            if (existingUser) {
+                if (existingUser.username === req.body.username) {
+                    return res.status(400).json({
+                        message: 'Username already taken'
+                    });
+                }
+                if (existingUser.email === req.body.email) {
+                    return res.status(400).json({
+                        message: 'Email already registered'
+                    });
+                }
             }
 
-            return res.status(201).json(user);
-            //return res.redirect('/users/login');
-        });
+            var user = new UserModel({
+                username: req.body.username,
+                password: req.body.password,
+                email: req.body.email
+            });
+
+            const savedUser = await user.save();
+            return res.status(201).json(savedUser);
+        } catch (err) {
+            if (err.code === 11000) {
+                // Duplicate key error
+                const field = Object.keys(err.keyPattern)[0];
+                return res.status(400).json({
+                    message: `${field.charAt(0).toUpperCase() + field.slice(1)} already exists`
+                });
+            }
+            return res.status(500).json({
+                message: 'Error when creating user',
+                error: err.message
+            });
+        }
     },
 
     /**
@@ -136,7 +162,7 @@ module.exports = {
     login: function(req, res, next){
         UserModel.authenticate(req.body.username, req.body.password, function(err, user){
             if(err || !user){
-                var err = new Error('Wrong username or paassword');
+                var err = new Error('Wrong username or password');
                 err.status = 401;
                 return next(err);
             }
