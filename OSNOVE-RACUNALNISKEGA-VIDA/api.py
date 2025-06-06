@@ -218,3 +218,8 @@ async def web_register_face(user_id: str, file: UploadFile = File(...)):
         # users_collection.update_one({"username": user_id}, {"$set": {"has_face_id_from_web": True, "face_id_path": str(file_location)}}, upsert=True)
         print(f"[API] Web face registration image for {user_id} saved to {file_location}")
         return {"message": f"Face registration image for {user_id} via web saved successfully.", "path": str(file_location)}
+    except HTTPException: # Ponovno sproži HTTPException, da ne pade v splošno Exception
+        raise
+    except Exception as e:
+        print(f"[API ERROR] Could not save web registered image for {user_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Could not save image: {str(e)}")
