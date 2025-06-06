@@ -201,3 +201,6 @@ async def web_register_face(user_id: str, file: UploadFile = File(...)):
     if not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="Invalid file type. Only images are allowed.")
 
+    timestamp = datetime.now().strftime('%Y%m%d%H%M%S%f') # Dodajmo milisekunde za unikatnost
+    file_location = user_dir / f"{user_id}_web_{timestamp}.jpg" # Shranjujemo kot jpg
+
