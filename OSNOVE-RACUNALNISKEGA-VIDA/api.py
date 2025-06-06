@@ -106,6 +106,16 @@ async def verify_face(challenge_id: str, file: UploadFile = File(None)):#File je
         raise HTTPException(status_code=400, detail="Challenge already verified")
 
     expected_user_id = pending_logins[challenge_id]["user_id"]
+    
+    #----MOCK LOGIKA----#
+    # MOCK LOGIKA: Vedno uspešno, če je 'mock' flag postavljen
+    if pending_logins[challenge_id].get("mock"):
+        pending_logins[challenge_id]["verified"] = True
+        pending_logins[challenge_id]["verified_user"] = expected_user_id # Uporabimo user_id iz initiate_2fa
+
+
+
+
 
     try:
         contents = await file.read()
