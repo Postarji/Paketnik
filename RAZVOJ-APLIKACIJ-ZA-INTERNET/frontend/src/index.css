@@ -346,7 +346,115 @@ body {
   width: 100%;
 }
 
-/* Responsive */
+/* Box Cards */
+.box-card {
+  background-color: var(--surface-color);
+  border: 1px solid #e0e0e0;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  height: 100%;
+  overflow: hidden;
+}
+
+.box-card:hover {
+  transform: var(--card-hover-transform);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.box-card-header {
+  background: linear-gradient(135deg, var(--tertiary-color), #4a7c79);
+  color: white;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-bottom: none;
+}
+
+.box-card-header i {
+  margin-right: 0.5rem;
+}
+
+.box-card-body {
+  padding: 1.25rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.box-card-title {
+  color: var(--text-color);
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  line-height: 1.3;
+}
+
+.box-card-text {
+  margin-bottom: 0.5rem;
+  line-height: 1.4;
+}
+
+.box-card-text small {
+  font-size: 0.875rem;
+}
+
+.text-success {
+  color: var(--primary-color) !important;
+}
+
+.text-primary {
+  color: var(--tertiary-color) !important;
+}
+
+.text-info {
+  color: #17a2b8 !important;
+}
+
+.text-muted {
+  color: var(--muted-text-color) !important;
+}
+
+.box-card-footer {
+  background-color: transparent;
+  border-top: 1px solid #e0e0e0;
+  padding: 1rem 1.25rem;
+  margin-top: auto;
+}
+
+.box-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.box-status-owner {
+  background-color: rgba(76, 102, 43, 0.1);
+  color: var(--primary-color);
+}
+
+.box-status-shared {
+  background-color: rgba(56, 102, 99, 0.1);
+  color: var(--tertiary-color);
+}
+
+.box-status-public {
+  background-color: rgba(23, 162, 184, 0.1);
+  color: #17a2b8;
+}
+
+/* Box Grid */
+.boxes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
 @media (max-width: 768px) {
   .nav-container {
     padding: 0 1rem;
@@ -360,6 +468,18 @@ body {
     margin: 1rem;
     padding: 1.5rem;
   }
+  .boxes-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+  }
+  
+  .box-card-body {
+    padding: 1rem;
+  }
+  
+  .box-card-footer {
+    padding: 0.75rem 1rem;
+  }
 }
 
 @media (max-width: 480px) {
@@ -372,6 +492,9 @@ body {
   .photo-meta {
     flex-direction: column;
     gap: 0.5rem;
+  }
+  .boxes-grid {
+    grid-template-columns: 1fr;
   }
 }
 

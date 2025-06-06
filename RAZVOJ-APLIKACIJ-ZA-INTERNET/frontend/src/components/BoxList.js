@@ -84,60 +84,50 @@ function BoxList() {
                             Add Your First Box
                         </Link>
                     )}
-                </div>
-            ) : (
-                <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                </div>            ) : (
+                <div className="boxes-grid">
                     {boxes.map(box => {
                         const isOwner = box.owner._id === userContext.user._id;
                         const isAllowedUser = box.allowedUsers.some(user => user._id === userContext.user._id);
                         const isAdminPublic = box.owner.role === 'admin' && !isOwner && !isAllowedUser;
                         
                         return (
-                            <div key={box._id} className="col">
-                                <div className="card h-100">
+                            <div key={box._id}>
+                                <div className="box-card">
                                     {isAdminPublic && (
-                                        <div className="card-header bg-info text-white py-2">
-                                            <small><i className="bi bi-globe me-1"></i>Public Box</small>
+                                        <div className="box-card-header">
+                                            <i className="bi bi-globe"></i>
+                                            Public Locker
                                         </div>
                                     )}
-                                    <div className="card-body">
-                                        <h5 className="card-title">{box.name}</h5>
-                                        <p className="card-text">
+                                    <div className="box-card-body">
+                                        <h5 className="box-card-title">{box.name}</h5>
+                                        <p className="box-card-text">
                                             <small className="text-muted">
-                                                Location: {box.location || 'Not specified'}
+                                                <i className="bi bi-geo-alt me-1"></i>
+                                                {box.location || 'Location not specified'}
                                             </small>
                                         </p>
                                         {isOwner && (
-                                            <p className="card-text">
-                                                <small className="text-success">
-                                                    <i className="bi bi-person-check me-1"></i>
-                                                    You own this box
-                                                </small>
-                                            </p>
+                                            <div className="box-status-badge box-status-owner">
+                                                <i className="bi bi-person-check me-1"></i>
+                                                You own this locker
+                                            </div>
                                         )}
                                         {isAllowedUser && !isOwner && (
-                                            <p className="card-text">
-                                                <small className="text-primary">
-                                                    <i className="bi bi-share me-1"></i>
-                                                    Shared with you
-                                                </small>
-                                            </p>
+                                            <div className="box-status-badge box-status-shared">
+                                                <i className="bi bi-share me-1"></i>
+                                                Shared with you
+                                            </div>
                                         )}
                                         {isAdminPublic && (
-                                            <p className="card-text">
-                                                <small className="text-info">
-                                                    <i className="bi bi-person-badge me-1"></i>
-                                                    Created by: {box.owner.username}
-                                                </small>
-                                            </p>
+                                            <div className="box-status-badge box-status-public">
+                                                <i className="bi bi-person-badge me-1"></i>
+                                                Created by {box.owner.username}
+                                            </div>
                                         )}
-                                        <p className="card-text">
-                                            <small className="text-muted">
-                                                Shared with: {box.allowedUsers.length} users
-                                            </small>
-                                        </p>
                                     </div>
-                                    <div className="card-footer bg-transparent">
+                                    <div className="box-card-footer">
                                         <div className="d-flex justify-content-between">
                                             <Link to={`/boxes/${box._id}/logs`} className="btn btn-outline-primary btn-sm">
                                                 <i className="bi bi-clock-history me-1"></i>
