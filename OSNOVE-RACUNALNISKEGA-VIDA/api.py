@@ -97,7 +97,7 @@ async def initiate_2fa_request(user_id: str):
     return JSONResponse(content={"message": f"2FA initiated for {user_id}. Challenge ID: {challenge_id}", "challenge_id": challenge_id})
 
 @app.post("/verify_face/{challenge_id}")
-async def verify_face(challenge_id: str, file: UploadFile = File(...)):
+async def verify_face(challenge_id: str, file: UploadFile = File(None)):#File je obcijski za mock
     if challenge_id not in pending_logins:
         raise HTTPException(status_code=404, detail="Invalid or expired challenge ID")
 
