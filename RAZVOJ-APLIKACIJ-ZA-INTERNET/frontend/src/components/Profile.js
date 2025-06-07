@@ -138,6 +138,32 @@ function Profile() {
         }
     };
 
+    const handleRequestPhone2FASetup = async () => {
+        if (!userContext.user?._id) {
+            setStatusMessage("Uporabnik ni prijavljen.");
+            return;
+        }
+        setStatusMessage("Pošiljam zahtevo za nastavitev 2FA preko telefona...");
+        try {
+            const response = await fetch("http://localhost:3001/users/request-phone-2fa-setup", {
+                method: "POST",
+                credentials: "include", // Pomembno za pošiljanje piškotka seje
+                headers: { 'Content-Type': 'application/json' },
+                // Telo ni potrebno, ker Node.js backend dobi userId iz seje
+            });
+            const data = await response.json();
+            if (response.ok) {
+                setStatusMessage(data.message || "Zahteva uspešno poslana. Sledite navodilom na mobilni napravi.");
+            } else {
+                setStatusMessage("Napaka pri pošiljanju zahteve: " + (data.message || response.statusText));
+            }
+        } catch (error) {
+            console.error("Error requesting phone 2FA setup:", error);
+            setStatusMessage("Napaka na strani odjemalca: " + error.message);
+        }
+    };
+
+
     if (!userContext.user) {
         return <Navigate replace to="/login" />;
     }
