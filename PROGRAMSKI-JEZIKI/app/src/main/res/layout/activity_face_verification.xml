@@ -1,21 +1,55 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:gravity="center"
-    android:padding="16dp">
+    android:orientation="vertical"
+    android:background="#f5f5f5">
 
     <TextView
-        android:text="Upload your face for verification"
-        android:textSize="18sp"
-        android:layout_marginBottom="24dp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Face Verification"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:textAlignment="center"
+        android:padding="16dp"
+        android:background="#2196F3"
+        android:textColor="@android:color/white" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Please position your face within the frame and tap capture when ready"
+        android:textSize="16sp"
+        android:textAlignment="center"
+        android:padding="16dp"
+        android:textColor="#666" />
+
+    <androidx.camera.view.PreviewView
+        android:id="@+id/viewFinder"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_margin="16dp" />
 
     <Button
-        android:id="@+id/uploadButton"
-        android:text="Choose Image"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
+        android:id="@+id/captureButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Capture Face"
+        android:textSize="18sp"
+        android:layout_margin="16dp"
+        android:padding="16dp"
+        android:background="#4CAF50"
+        android:textColor="@android:color/white" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Make sure you're in good lighting and looking directly at the camera"
+        android:textSize="12sp"
+        android:textAlignment="center"
+        android:padding="8dp"
+        android:textColor="#999" />
+
 </LinearLayout>

@@ -45,11 +45,9 @@ class LoginActivity : AppCompatActivity() {
                     ) {
                         if (response.isSuccessful && response.body() != null) {
                             val user = response.body()!!
-                            Toast.makeText(this@LoginActivity, "Welcome ${user.username}", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this@LoginActivity, "Credentials verified. Initiating 2FA...", Toast.LENGTH_SHORT).show()
 
-                            val intent = Intent(this@LoginActivity, MainActivity::class.java)
-                            startActivity(intent)
-                            finish()
+                            initiate2FA(user.username)
                         } else {
                             Toast.makeText(this@LoginActivity, "Login failed", Toast.LENGTH_SHORT).show()
                         }
@@ -61,5 +59,31 @@ class LoginActivity : AppCompatActivity() {
                 })
             }
         }
+    }
+
+    private fun initiate2FA(userId: String) {
+        ApiClient.instance.initiate2FA(userId).enqueue(object : retrofit2.Callback<InitiateTwoFAResponse> {
+            override fun onResponse(
+                call: retrofit2.Call<InitiateTwoFAResponse>,
+                response: retrofit2.Response<InitiateTwoFAResponse>
+            ) {
+                if (response.isSuccessful && response.body() != null) {
+                    val twoFAResponse = response.body()!!
+                    val challengeId = twoFAResponse.challenge_id
+
+                    // Start Face Verification Activity
+                    val intent = Intent(this@LoginActivity, FaceVerificationActivity::class.java)
+                    intent.putExtra("challenge_id", challengeId)
+                    intent.putExtra("user_id", userId)
+                    startActivity(intent)
+                } else {
+                    Toast.makeText(this@LoginActivity, "Failed to initiate 2FA", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            override fun onFailure(call: retrofit2.Call<InitiateTwoFAResponse>, t: Throwable) {
+                Toast.makeText(this@LoginActivity, "2FA Error: ${t.message}", Toast.LENGTH_SHORT).show()
+            }
+        })
     }
 }
