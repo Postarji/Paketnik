@@ -275,5 +275,46 @@ module.exports = {
                 return res.json(updatedUser);
             });
         });
-    }
+    },
+
+    requestPhone2FASetup: async function(req, res) {
+        const userIdFromSession = req.session.userId;
+        if (!userIdFromSession) {
+            return res.status(401).json({ message: "Niste prijavljeni." });
+        }
+
+        try {
+            const user = await UserModel.findById(userIdFromSession);
+            if (!user) {
+                return res.status(404).json({ message: "Uporabnik ni najden." });
+            }
+
+            // Klic na Python API za začetek 2FA (kot da bi to bila mobilna naprava)
+            const apiResponse = await fetch(`${PYTHON_API_URL}/initiate_2fa`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: user.username }) // Uporabi username ali _id Python API
+            });
+
+            const data = await apiResponse.json();
+
+            if (!apiResponse.ok) {
+                return res.status(apiResponse.status).json({ message: "Napaka pri komunikaciji s Python API: " + (data.detail || apiResponse.statusText) });
+            }
+            
+            // challenge_id lahko shranim v sejo ali uporabniški model kasneje
+            // req.session.faceChallengeId = data.challenge_id; 
+
+            console.log(`[NodeJS] Initiated 2FA for ${user.username}, challenge_id: ${data.challenge_id}`);
+            return res.status(200).json({ 
+                message: "Zahteva za nastavitev 2FA preko telefona je bila uspešno posredovana. Challenge ID: " + data.challenge_id + ". Sledite navodilom na mobilni napravi (simulirano).",
+                challenge_id: data.challenge_id 
+            });
+
+        } catch (error) {
+            console.error("[NodeJS] Error in requestPhone2FASetup:", error);
+            return res.status(500).json({ message: "Interna napaka strežnika pri zahtevi za telefon." });
+        }
+    },
+    
 };
