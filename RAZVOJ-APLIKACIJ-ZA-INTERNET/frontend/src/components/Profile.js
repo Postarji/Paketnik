@@ -245,9 +245,27 @@ function Profile() {
                                     </div>
                                 </div>
                             </div>
+                            {/* GUMBI ZA 2FA */}
+                            <div className="mt-4">
+                                <h5>Nastavitve 2FA</h5>
+                                <button 
+                                    className="btn btn-info w-100 mb-2"
+                                    onClick={handleEnableWebcam2FA}
+                                >
+                                    Nastavi 2FA z računalniško kamero
+                                </button>
+                                <button 
+                                    className="btn btn-warning w-100"
+                                    onClick={handleRequestPhone2FASetup}
+                                >
+                                    Zahtevaj nastavitev 2FA preko telefona
+                                </button>
+                                {statusMessage && !showCameraModal && <p className="mt-2 text-muted small">{statusMessage}</p>}
+                            </div>
                         </div>
                     </div>
                 </div>
+                        
 
                 {/* Content Area */}
                 <div className="col-md-8">
