@@ -63,7 +63,7 @@ function Login() {
             setShowCameraForLogin(false);
         }
     };
-    
+
     const stopCameraForLogin = () => {
         if (streamLogin) {
             streamLogin.getTracks().forEach(track => track.stop());
@@ -72,6 +72,49 @@ function Login() {
         }
     };
 
+     const captureAndLoginWithFace = async () => {
+        if (videoRefLogin.current && username) {
+            const canvas = document.createElement('canvas');
+            canvas.width = videoRefLogin.current.videoWidth;
+            canvas.height = videoRefLogin.current.videoHeight;
+            canvas.getContext('2d').drawImage(videoRefLogin.current, 0, 0);
+            setLoginStatus("Zajemam sliko za prijavo...");
+
+            const imageDataB64 = canvas.toDataURL('image/jpeg'); // Dobimo base64 string
+
+            setLoginStatus("Pošiljam podatke za prijavo z obrazom...");
+            try {
+                const response = await fetch("http://localhost:3001/users/login-face-webcam", {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: username,
+                        imageDataB64: imageDataB64
+                    })
+                });
+                const data = await response.json();
+                if (response.ok && data._id) {
+                    userContext.setUserContext(data);
+                    setLoginStatus("Uspešna prijava z obrazom!");
+                    setShowCameraForLogin(false);
+                } else {
+                    setError("Prijava z obrazom ni uspela: " + (data.message || response.statusText));
+                    setLoginStatus("");
+                }
+            } catch (error) {
+                console.error("Error logging in with face:", error);
+                setError("Napaka na strani odjemalca pri prijavi z obrazom: " + error.message);
+                setLoginStatus("");
+            } finally {
+                stopCameraForLogin();
+                 // setShowCameraForLogin(false); // Že zgoraj, če uspe
+            }
+        } else {
+            setError("Uporabniško ime manjka ali kamera ni pripravljena.");
+            setLoginStatus("");
+        }
+    };
 
 
     return (
