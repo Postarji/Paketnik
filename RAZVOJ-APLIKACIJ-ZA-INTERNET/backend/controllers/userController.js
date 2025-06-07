@@ -1,5 +1,9 @@
 var UserModel = require('../models/userModel.js');
+const fetch = require('node-fetch'); //za klice na Python API: npm install node-fetch
+const FormData = require('form-data'); //dodaj v includes  TODO!
+const { Readable } = require('stream'); //pretvorba base64 v stream
 
+const PYTHON_API_URL = "http://localhost:8080"; //kasneje prilagodim TODO
 /**
  * userController.js
  *
