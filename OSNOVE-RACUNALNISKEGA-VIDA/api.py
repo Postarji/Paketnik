@@ -10,7 +10,19 @@ import cv2
 import os 
 from dotenv import load_dotenv
 from datetime import datetime
+from fastapi.middleware.cors import CORSMiddleware
 
+origins = [
+    "http://localhost:3000", # React frontend
+    "http://localhost:3001", # Node.js backend (če bi ta neposredno klical)
+]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 dotenv_path = os.path.join(os.path.dirname(__file__), 'apiMongo.env') # Pravilno poišče datoteko
 if os.path.exists(dotenv_path):
