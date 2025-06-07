@@ -63,6 +63,14 @@ function Login() {
             setShowCameraForLogin(false);
         }
     };
+    
+    const stopCameraForLogin = () => {
+        if (streamLogin) {
+            streamLogin.getTracks().forEach(track => track.stop());
+            setStreamLogin(null);
+            if(videoRefLogin.current) videoRefLogin.current.srcObject = null;
+        }
+    };
 
 
 
