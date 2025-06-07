@@ -1,4 +1,4 @@
-import { useContext, useState } from 'react';
+import { useContext, useState, useRef } from 'react';
 import { UserContext } from '../userContext';
 import { Navigate } from 'react-router-dom';
 
@@ -7,6 +7,12 @@ function Login() {
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const userContext = useContext(UserContext);
+
+    // Za zajem slike s kamero pri prijavi
+    const videoRefLogin = useRef(null);
+    const [streamLogin, setStreamLogin] = useState(null);
+    const [showCameraForLogin, setShowCameraForLogin] = useState(false);
+    const [loginStatus, setLoginStatus] = useState('');
 
     async function Login(e) {
         e.preventDefault();
