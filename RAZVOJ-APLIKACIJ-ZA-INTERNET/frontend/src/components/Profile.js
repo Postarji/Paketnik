@@ -95,6 +95,12 @@ function Profile() {
         }
     };
 
+     const handleEnableWebcam2FA = () => {
+        setShowCameraModal(true);
+        startCamera();
+    };
+
+
     if (!userContext.user) {
         return <Navigate replace to="/login" />;
     }
