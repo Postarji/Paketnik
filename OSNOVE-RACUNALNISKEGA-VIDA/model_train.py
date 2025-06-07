@@ -45,17 +45,29 @@ class FaceSequence(Sequence):
             batch_images.append(img)
 
         return np.array(batch_images), np.array(batch_labels)
-    
-    # === Nalaganje poti in oznak iz labels.csv ===
-def nalozi_poti_in_oznake(pot_csv='data/augmented/labels.csv', base_dir='data/augmented'):
+
+    def on_epoch_end(self):
+        if self.shuffle:
+            combined = list(zip(self.image_paths, self.labels))
+            random.shuffle(combined)
+            self.image_paths, self.labels = zip(*combined)
+
+
+# === Nalaganje poti in oznak iz labels.csv ===
+def nalozi_poti_in_oznake():
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    base_path = os.path.join(script_dir, '..', 'data', 'augmented')
+    pot_csv = os.path.join(base_path, 'labels.csv')
     df = pd.read_csv(pot_csv)
-    paths = [os.path.join(base_dir, fname) for fname in df['filename']]
+    paths = [os.path.join(base_path, fname) for fname in df['filename']]
     labels = df['label'].values
     label_map = {label: i for i, label in enumerate(sorted(set(labels)))}
     numeric_labels = np.array([label_map[label] for label in labels])
     return np.array(paths), numeric_labels, label_map
 
-def zgradi_model(capacity=3, vhodna_oblika=(224, 224, 3), razredi=3):
+
+# === CNN model za klasifikacijo obrazov ===
+def zgradi_model(capacity=3, vhodna_oblika=(224, 224, 3), razredi=1):
     model = Sequential()
     kanali = 32
     for i in range(capacity):
@@ -68,9 +80,11 @@ def zgradi_model(capacity=3, vhodna_oblika=(224, 224, 3), razredi=3):
     model.add(Flatten())
     model.add(Dense(64, activation='sigmoid'))
     model.add(Dense(64, activation='sigmoid'))
-    model.add(Dense(razredi, activation='softmax'))
+    model.add(Dense(1, activation='sigmoid'))  # Ena sama enota za binarno klasifikacijo
     return model
 
+
+# === Risanje grafa točnosti ===
 def narisi_grafe(history, capacity_label):
     plt.plot(history.history['accuracy'], label='Učna')
     plt.plot(history.history['val_accuracy'], label='Validacijska')
@@ -82,17 +96,24 @@ def narisi_grafe(history, capacity_label):
     plt.savefig(f"accuracy_{capacity_label}.png")
     plt.close()
 
+
+# === Glavni program ===
 def main():
     poti, oznake, label_map = nalozi_poti_in_oznake()
 
-    if len(label_map) < 2:
-        print("[NAPAKA] Za učenje modela potrebujemo vsaj dve različni osebi (razreda).")
+    if len(label_map) < 1:
+        print("[NAPAKA] Potrebujemo vsaj en razred (osebo) za učenje modela.")
         return
 
+    # Če imamo samo en razred, uporabimo umetno binarno klasifikacijo (obraz vs. ni obraz)
+    if len(label_map) == 1:
+        oznake = np.array([1 for _ in oznake])
+        print("[OPOZORILO] Samo en razred: treniranje kot binarna klasifikacija z umetnimi negativnimi primeri.")
+
     poti_train, poti_temp, oznake_train, oznake_temp = train_test_split(
-        poti, oznake, test_size=0.4, stratify=oznake, random_state=42)
+        poti, oznake, test_size=0.4, random_state=42)
     poti_val, poti_test, oznake_val, oznake_test = train_test_split(
-        poti_temp, oznake_temp, test_size=0.5, stratify=oznake_temp, random_state=42)
+        poti_temp, oznake_temp, test_size=0.5, random_state=42)
 
     train_gen = FaceSequence(poti_train, oznake_train, batch_size=32, input_size=(224, 224))
     val_gen = FaceSequence(poti_val, oznake_val, batch_size=32, input_size=(224, 224))
@@ -100,8 +121,8 @@ def main():
 
     for capacity in [2, 3, 4]:
         print(f"\n--- Učenje modela s kapaciteto {capacity} ---")
-        model = zgradi_model(capacity=capacity, vhodna_oblika=(224, 224, 3), razredi=len(label_map))
-        model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+        model = zgradi_model(capacity=capacity, vhodna_oblika=(224, 224, 3), razredi=1)
+        model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
         history = model.fit(train_gen, validation_data=val_gen, epochs=20, verbose=2)
 
         test_loss, test_accuracy = model.evaluate(test_gen, verbose=0)
