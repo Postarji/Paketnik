@@ -6,9 +6,9 @@ uvicorn
 Pillow
 pymongo
 python-dotenv
-python-multipart 
-datetime
+python-multipart
 tensorflow>=2.10 
 scikit-learn
 matplotlib
-
+pandas
+scikit-learn
