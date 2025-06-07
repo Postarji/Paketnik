@@ -1,4 +1,7 @@
 var PhotoModel = require('../models/photoModel.js');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
 /**
  * photoController.js
@@ -21,7 +24,12 @@ module.exports = {
                     error: err
                 });
             }
-            return res.json(photos);
+            // Filter out photos that have 10 or more flags, except for owners viewing their own posts
+            const filteredPhotos = photos.filter(photo => {
+                const flagCount = (photo.flags || []).length;
+                return flagCount < 10 || (req.session.userId && photo.postedBy._id.toString() === req.session.userId);
+            });
+            return res.json(filteredPhotos);
         });
     },
 
@@ -55,14 +63,21 @@ module.exports = {
      * photoController.create()
      */
     create: function (req, res) {
+        // Ensure the path is consistently formatted
+        const imagePath = req.file.filename.startsWith('images/') 
+            ? req.file.filename 
+            : `images/${req.file.filename}`;
+
         var photo = new PhotoModel({
-            name : req.body.name,
+            name: req.body.name,
             message: req.body.message,
-            path : "/images/"+req.file.filename,
-            postedBy : req.session.userId,
-            views : 0,
-            likes : [],
-            dislikes : []
+            path: imagePath,
+            postedBy: req.session.userId,
+            views: 0,
+            likes: [],
+            dislikes: [],
+            flags: [],
+            createdAt: new Date()
         });
 
         photo.save(function (err, photo) {
@@ -87,11 +102,20 @@ module.exports = {
 
     /**
      * photoController.update()
+     * Updates a photo if the user is the owner
      */
-    update: function (req, res) {
+    update: function(req, res) {
+        // Check if user is logged in
+        if (!req.session.userId) {
+            return res.status(401).json({ message: 'Not authorized' });
+        }
+
         var id = req.params.id;
 
-        PhotoModel.findOne({_id: id}, function (err, photo) {
+        PhotoModel.findOne({
+            _id: id,
+            postedBy: req.session.userId // Ensure user is the owner
+        }, function(err, photo) {
             if (err) {
                 return res.status(500).json({
                     message: 'Error when getting photo',
@@ -101,17 +125,16 @@ module.exports = {
 
             if (!photo) {
                 return res.status(404).json({
-                    message: 'No such photo'
+                    message: 'No such photo or not authorized'
                 });
             }
 
-            photo.name = req.body.name ? req.body.name : photo.name;
-			photo.path = req.body.path ? req.body.path : photo.path;
-			photo.postedBy = req.body.postedBy ? req.body.postedBy : photo.postedBy;
-			photo.views = req.body.views ? req.body.views : photo.views;
-			photo.likes = req.body.likes ? req.body.likes : photo.likes;
-			
-            photo.save(function (err, photo) {
+            // Update only allowed fields
+            photo.name = req.body.name || photo.name;
+            photo.message = req.body.message || photo.message;
+            photo.updatedAt = new Date(); // Add timestamp for update
+
+            photo.save(function(err, updatedPhoto) {
                 if (err) {
                     return res.status(500).json({
                         message: 'Error when updating photo.',
@@ -119,7 +142,7 @@ module.exports = {
                     });
                 }
 
-                return res.json(photo);
+                return res.json(updatedPhoto);
             });
         });
     },
@@ -274,7 +297,12 @@ module.exports = {
                     error: err
                 });
             }
-            return res.json(photos);
+            // Filter out photos that have 10 or more flags, except for owners viewing their own posts
+            const filteredPhotos = photos.filter(photo => {
+                const flagCount = (photo.flags || []).length;
+                return flagCount < 10 || (req.session.userId && photo.postedBy._id.toString() === req.session.userId);
+            });
+            return res.json(filteredPhotos);
         });
     }
 };

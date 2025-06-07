@@ -1,0 +1,51 @@
+name: CI/CD for OSNOVE-RACUNALNISKEGA-VIDA (Python)
+
+on:
+  push:
+    paths:
+      - 'OSNOVE-RACUNALNISKEGA-VIDA/**'
+  release:
+    types: [published]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      - name: Cache pip
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('OSNOVE-RACUNALNISKEGA-VIDA/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      - name: Install dependencies
+        run: |
+          cd OSNOVE-RACUNALNISKEGA-VIDA
+          pip install -r requirements.txt
+      - name: Run tests
+        run: |
+          cd OSNOVE-RACUNALNISKEGA-VIDA
+          pytest tests/ --verbose
+
+  deploy:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+    steps:
+      - uses: actions/checkout@v3
+      - name: Log in to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./OSNOVE-RACUNALNISKEGA-VIDA
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/osnove-racunalniskega-vida:${{ github.event.release.tag_name }}

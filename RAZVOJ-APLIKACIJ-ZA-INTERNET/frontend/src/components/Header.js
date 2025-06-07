@@ -15,9 +15,10 @@ function Header(props) {
                 </div>
                 <nav className="nav-links">
                     <Link to='/' className="nav-link">Home</Link>
-                    {userContext.user ? (
+                    <Link to='/about-us' className="nav-link">About Us</Link>                    {userContext.user ? (
                         <>
                             <Link to='/publish' className="nav-link">Publish</Link>
+                            <Link to='/boxes' className="nav-link">My Boxes</Link>
                             <Link to='/profile' className="nav-link">Profile</Link>
                             <Link to='/logout' className="nav-link">Logout</Link>
                         </>

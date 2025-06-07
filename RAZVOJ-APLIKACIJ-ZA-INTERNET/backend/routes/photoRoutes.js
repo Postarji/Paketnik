@@ -19,6 +19,7 @@ function requiresLogin(req, res, next){
 
 router.get('/', photoController.list);
 router.get('/sorted', photoController.listSortedByDate);
+router.put('/:id', requiresLogin, photoController.update);
 router.get('/:id', photoController.show);
 
 router.post('/', requiresLogin, upload.single('image'), photoController.create);

@@ -1,5 +1,9 @@
 var UserModel = require('../models/userModel.js');
+const fetch = require('node-fetch'); //za klice na Python API: npm install node-fetch
+const FormData = require('form-data'); //dodaj v includes  TODO!
+const { Readable } = require('stream'); //pretvorba base64 v stream
 
+const PYTHON_API_URL = "http://localhost:8080"; //kasneje prilagodim TODO
 /**
  * userController.js
  *
@@ -50,24 +54,50 @@ module.exports = {
     /**
      * userController.create()
      */
-    create: function (req, res) {
-        var user = new UserModel({
-			username : req.body.username,
-			password : req.body.password,
-			email : req.body.email
-        });
+    create: async function (req, res) {
+        try {
+            // Check if username already exists
+            const existingUser = await UserModel.findOne({ 
+                $or: [
+                    { username: req.body.username },
+                    { email: req.body.email }
+                ]
+            });
 
-        user.save(function (err, user) {
-            if (err) {
-                return res.status(500).json({
-                    message: 'Error when creating user',
-                    error: err
-                });
+            if (existingUser) {
+                if (existingUser.username === req.body.username) {
+                    return res.status(400).json({
+                        message: 'Username already taken'
+                    });
+                }
+                if (existingUser.email === req.body.email) {
+                    return res.status(400).json({
+                        message: 'Email already registered'
+                    });
+                }
             }
 
-            return res.status(201).json(user);
-            //return res.redirect('/users/login');
-        });
+            var user = new UserModel({
+                username: req.body.username,
+                password: req.body.password,
+                email: req.body.email
+            });
+
+            const savedUser = await user.save();
+            return res.status(201).json(savedUser);
+        } catch (err) {
+            if (err.code === 11000) {
+                // Duplicate key error
+                const field = Object.keys(err.keyPattern)[0];
+                return res.status(400).json({
+                    message: `${field.charAt(0).toUpperCase() + field.slice(1)} already exists`
+                });
+            }
+            return res.status(500).json({
+                message: 'Error when creating user',
+                error: err.message
+            });
+        }
     },
 
     /**
@@ -136,7 +166,7 @@ module.exports = {
     login: function(req, res, next){
         UserModel.authenticate(req.body.username, req.body.password, function(err, user){
             if(err || !user){
-                var err = new Error('Wrong username or paassword');
+                var err = new Error('Wrong username or password');
                 err.status = 401;
                 return next(err);
             }
@@ -245,5 +275,118 @@ module.exports = {
                 return res.json(updatedUser);
             });
         });
-    }
+    },
+
+    requestPhone2FASetup: async function(req, res) {
+        const userIdFromSession = req.session.userId;
+        if (!userIdFromSession) {
+            return res.status(401).json({ message: "Niste prijavljeni." });
+        }
+
+        try {
+            const user = await UserModel.findById(userIdFromSession);
+            if (!user) {
+                return res.status(404).json({ message: "Uporabnik ni najden." });
+            }
+
+            // Klic na Python API za začetek 2FA (kot da bi to bila mobilna naprava)
+            const apiResponse = await fetch(`${PYTHON_API_URL}/initiate_2fa`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: user.username }) // Uporabi username ali _id Python API
+            });
+
+            const data = await apiResponse.json();
+
+            if (!apiResponse.ok) {
+                return res.status(apiResponse.status).json({ message: "Napaka pri komunikaciji s Python API: " + (data.detail || apiResponse.statusText) });
+            }
+            
+            // challenge_id lahko shranim v sejo ali uporabniški model kasneje
+            // req.session.faceChallengeId = data.challenge_id; 
+
+            console.log(`[NodeJS] Initiated 2FA for ${user.username}, challenge_id: ${data.challenge_id}`);
+            return res.status(200).json({ 
+                message: "Zahteva za nastavitev 2FA preko telefona je bila uspešno posredovana. Challenge ID: " + data.challenge_id + ". Sledite navodilom na mobilni napravi (simulirano).",
+                challenge_id: data.challenge_id 
+            });
+
+        } catch (error) {
+            console.error("[NodeJS] Error in requestPhone2FASetup:", error);
+            return res.status(500).json({ message: "Interna napaka strežnika pri zahtevi za telefon." });
+        }
+    },
+     loginFaceWebcam: async function(req, res, next) {
+        const { username, imageDataB64 } = req.body; // imageDataB64 bo base64 string slike
+
+        if (!username || !imageDataB64) {
+            return res.status(400).json({ message: "Manjkata uporabniško ime ali podatki slike." });
+        }
+
+        try {
+            // 1. Klic na Python API za initiate_2fa
+            const initiateResponse = await fetch(`${PYTHON_API_URL}/initiate_2fa`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: username })
+            });
+            const initiateData = await initiateResponse.json();
+
+            if (!initiateResponse.ok) {
+                return res.status(initiateResponse.status).json({ message: "Python API /initiate_2fa error: " + (initiateData.detail || initiateResponse.statusText) });
+            }
+            const challengeId = initiateData.challenge_id;
+            console.log(`[NodeJS] loginFaceWebcam: Got challenge_id ${challengeId} for user ${username}`);
+
+            // 2. Priprava slike za pošiljanje na /verify_face
+            // Pretvorba base64 v Buffer in nato v FormData
+            const imageBuffer = Buffer.from(imageDataB64.split(',')[1], 'base64'); // Odstrani 'data:image/jpeg;base64,' del
+            
+            const formData = new FormData();
+            // Ustvari stream iz bufferja, da lahko določi ime datoteke in tip
+            const imageStream = Readable.from(imageBuffer);
+            formData.append('file', imageStream, {
+                filename: `${username}_verify.jpg`,
+                contentType: 'image/jpeg', // Ali 'image/png' odvisno od zajema
+            });
+            
+            // 3.klic na Python API za /verify_face
+            const verifyResponse = await fetch(`${PYTHON_API_URL}/verify_face/${challengeId}`, {
+                method: 'POST',
+                body: formData,
+                headers: formData.getHeaders() // To je potrebno za node-fetch s form-data
+            });
+            const verifyData = await verifyResponse.json();
+
+            if (!verifyResponse.ok) {
+                 return res.status(verifyResponse.status).json({ message: "Python API /verify_face error: " + (verifyData.message || verifyData.detail || verifyResponse.statusText), pythonResponse: verifyData });
+            }
+
+            // 4. Preverjanje odgovora in prijava uporabnika
+            if (verifyData.verified_user === username && verifyData.message.includes("successfully")) { // Prilagodit TODO 
+                console.log(`[NodeJS] loginFaceWebcam: Face verified for ${username}`);
+                // Najdi uporabnika v bazi in ustvari sejo (podobno kot v navadni login funkciji)
+                UserModel.findOne({ username: username }).exec(function(err, user) {
+                    if (err || !user) {
+                        var authError = new Error('Uporabnik po obrazni prijavi ni najden.');
+                        authError.status = 401;
+                        return next(authError);
+                    }
+                    req.session.userId = user._id;
+                    return res.json(user); // Vrni podatke o uporabniku
+                });
+            } else {
+                console.log(`[NodeJS] loginFaceWebcam: Face verification failed for ${username}. API response:`, verifyData);
+                var authFailedError = new Error('Neuspešna prijava z obrazom. Obraz ni prepoznan ali se ne ujema.');
+                authFailedError.status = 401;
+                return next(authFailedError);
+            }
+
+        } catch (error) {
+            console.error("[NodeJS] Error in loginFaceWebcam:", error);
+            return res.status(500).json({ message: "Interna napaka strežnika pri prijavi z obrazom." });
+        }
+    },
+
+
 };
