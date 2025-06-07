@@ -42,6 +42,7 @@ function Profile() {
                 // Save profile data
                 if (profileData && profileData._id) {
                     setProfile(profileData);
+                    userContext.setUserContext(profileData); //posodobi context tukaj
                     setUserPhotos(photosData.filter(photo => 
                         photo.postedBy?._id === profileData._id
                     ));
@@ -70,6 +71,20 @@ function Profile() {
                 ? photo.path 
                 : `images/${photo.path}`;
         return `http://localhost:3001/${imagePath}`;
+    };
+
+    const startCamera = async () => {
+        try {
+            const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
+            setStream(mediaStream);
+            if (videoRef.current) {
+                videoRef.current.srcObject = mediaStream;
+            }
+            setStatusMessage("Kamera aktivna. Pripravljeni na zajem.");
+        } catch (err) {
+            console.error("Error accessing camera:", err);
+            setStatusMessage("Napaka pri dostopu do kamere: " + err.message);
+        }
     };
 
     if (!userContext.user) {
