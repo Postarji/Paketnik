@@ -11,6 +11,19 @@ import os
 from dotenv import load_dotenv
 from datetime import datetime
 from fastapi.middleware.cors import CORSMiddleware
+from pathlib import Path
+import json
+from tensorflow.keras.models import load_model
+
+EXPECTED_SHAPE = (224, 224) # Velikost slike za model
+MODEL_FILENAME = "model_obrazi_kapaciteta_3.keras" # TODO! 
+LABEL_MAP_FILENAME = "label_map.json"
+MODEL_PATH = Path(__file__).parent / MODEL_FILENAME
+LABEL_MAP_PATH = Path(__file__).parent / LABEL_MAP_FILENAME
+REGISTRATION_IMAGE_PATH = Path("/app/data/web_captured_raw") # Pot znotraj Dockerja
+
+# --- FastAPI aplikacija in CORS ---
+app = FastAPI()
 
 origins = [
     "http://localhost:3000", # React frontend
@@ -91,8 +104,7 @@ def predict_with_mock_model(image_array: np.ndarray, model_instance):
         return {"user_id": "unknown", "confidence": 0.40}
 
 
-EXPECTED_SHAPE = (224, 224) #velikost 224x224
-app = FastAPI()
+
 # Shranjuj "zahteve za prijavo" - zelo poenostavljeno
 # V resnični aplikaciji bo tu baza podatkov ali Redis.
 pending_logins = {} 
