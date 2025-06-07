@@ -131,7 +131,18 @@ def main():
 
         model.save(f"model_obrazi_kapaciteta_{capacity}.keras")
         narisi_grafe(history, f"kapaciteta_{capacity}")
-
+        
+    if label_map:
+        # Določi pot relativno glede na lokacijo TE datoteke (model_train.py)
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        label_map_path = os.path.join(script_dir, "label_map.json")
+        
+        with open(label_map_path, 'w') as f:
+            json.dump(label_map, f, indent=4)
+        print(f"Label map saved to {label_map_path}")
+        print(f"Content of saved label_map: {label_map}")
+    else:
+        print("[NAPAKA] label_map je prazen, ne morem shraniti v JSON.")
 
 if __name__ == "__main__":
     main()
