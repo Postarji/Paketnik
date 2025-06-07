@@ -195,6 +195,35 @@ function Profile() {
 
     return (
         <div className="container mt-4">
+            {/* Modalno okno za kamero */}
+            {showCameraModal && (
+                <div className="modal fade show d-block" tabIndex="-1" style={{backgroundColor: "rgba(0,0,0,0.5)"}}>
+                    <div className="modal-dialog modal-dialog-centered">
+                        <div className="modal-content">
+                            <div className="modal-header">
+                                <h5 className="modal-title">Nastavi 2FA z Web kamero</h5>
+                                <button type="button" className="btn-close" onClick={() => { setShowCameraModal(false); stopCamera(); }}></button>
+                            </div>
+                            <div className="modal-body text-center">
+                                <video ref={videoRef} autoPlay playsInline muted width="320" height="240" style={{border: "1px solid #ccc"}}></video>
+                                {stream && (
+                                     <button className="btn btn-success mt-2" onClick={captureAndRegisterFace}>
+                                        Zajemi in shrani obraz
+                                    </button>
+                                )}
+                                {!stream && <p>Prosimo, dovolite dostop do kamere.</p>}
+                                <p className="mt-2">{statusMessage}</p>
+                            </div>
+                            <div className="modal-footer">
+                                <button type="button" className="btn btn-secondary" onClick={() => { setShowCameraModal(false); stopCamera(); }}>
+                                    Prekliči
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="row">
                 {/* Profile Information */}
                 <div className="col-md-4">
