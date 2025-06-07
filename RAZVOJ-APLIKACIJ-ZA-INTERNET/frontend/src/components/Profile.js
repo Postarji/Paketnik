@@ -1,6 +1,9 @@
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useState, useRef} from 'react';
 import { UserContext } from '../userContext';
 import { Navigate, Link } from 'react-router-dom';
+
+// URL Python API-ja
+const PYTHON_API_URL = "http://localhost:8080"; // TODO
 
 function Profile() {
     const userContext = useContext(UserContext);    const [profile, setProfile] = useState({});
@@ -9,6 +12,12 @@ function Profile() {
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('posts'); // 'posts' or 'boxes'
 
+    // Za zajem slike s kamero
+    const videoRef = useRef(null);
+    const [stream, setStream] = useState(null);
+    const [showCameraModal, setShowCameraModal] = useState(false);
+    const [statusMessage, setStatusMessage] = useState('');
+    
     useEffect(() => {
         const getProfile = async function() {
             try {
