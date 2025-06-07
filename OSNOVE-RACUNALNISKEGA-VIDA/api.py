@@ -9,6 +9,8 @@ import io
 import cv2
 import os 
 from dotenv import load_dotenv
+from datetime import datetime
+
 
 dotenv_path = os.path.join(os.path.dirname(__file__), 'apiMongo.env') # Pravilno poišče datoteko
 if os.path.exists(dotenv_path):
@@ -90,12 +92,14 @@ async def initiate_2fa_request(user_id: str):
     # API generira nekakšen "izziv" ali sejo.
     import uuid
     challenge_id = str(uuid.uuid4())
-    pending_logins[challenge_id] = {"user_id": user_id, "verified": False}
+    pending_logins[challenge_id] = {"user_id": user_id, "verified": False, "mock": True}#TODO to kasneje ZBRIŠI samo placeholder za testing
+    print(f"[MOCK API] 2FA initiated for {user_id}. Challenge ID: {challenge_id}")
+
     # Tukaj bi Član 1 sprožil potisno obvestilo na mobilno aplikacijo s tem challenge_id.
     return JSONResponse(content={"message": f"2FA initiated for {user_id}. Challenge ID: {challenge_id}", "challenge_id": challenge_id})
 
 @app.post("/verify_face/{challenge_id}")
-async def verify_face(challenge_id: str, file: UploadFile = File(...)):
+async def verify_face(challenge_id: str, file: UploadFile = File(None)):#File je obcijski za mock
     if challenge_id not in pending_logins:
         raise HTTPException(status_code=404, detail="Invalid or expired challenge ID")
 
@@ -104,7 +108,27 @@ async def verify_face(challenge_id: str, file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail="Challenge already verified")
 
     expected_user_id = pending_logins[challenge_id]["user_id"]
+    
+    #----MOCK LOGIKA----#
+    # Vedno uspešno, če je 'mock' flag postavljen
+    if pending_logins[challenge_id].get("mock"):
+        pending_logins[challenge_id]["verified"] = True
+        pending_logins[challenge_id]["verified_user"] = expected_user_id # Uporabimo user_id iz initiate_2fa
 
+        print(f"[MOCK API] User {expected_user_id} verified successfully for challenge {challenge_id} (mocked).")
+        if file:
+            # Kljub mocku shranimo sliko, če je poslana, za kasnejšo analizo/debug
+            contents = await file.read()
+            print(f"[MOCK API] Received image of size {len(contents)} for challenge {challenge_id}, but verification is mocked.")
+       
+        return JSONResponse(content={
+            "message": "User verified successfully (mocked).",
+            "verified_user": expected_user_id,
+            "expected_user": expected_user_id,
+            "confidence": 1.0 # Mock confidence
+        })
+
+    #-----------------#
     try:
         contents = await file.read()
         image_pil = Image.open(io.BytesIO(contents)) # PIL slika
@@ -156,7 +180,46 @@ async def check_2fa_status(challenge_id: str):
     
     status = pending_logins[challenge_id]
     if status.get("verified"):
+        print(f"[MOCK API] Status for {challenge_id} is VERIFIED for user {status.get('verified_user')}.")#kasneje zbriši
         return JSONResponse(content={"status": "VERIFIED", "user_id": status.get("verified_user")})
     else:
         #lahko tudi timeout
+        print(f"[MOCK API] Status for {challenge_id} is PENDING.")
         return JSONResponse(content={"status": "PENDING"})
+    
+    # DODAJANJE NOVE KONČNE TOČKE ZA "REGISTRACIJO OBRAZA" PREKO SPLETNE STRANI
+    # To je ločeno od 2FA verifikacije. To je za ČLANA 1 in ČLANA 2 za pripravo podatkov.
+REGISTRATION_IMAGE_PATH = Path("/app/data/web_captured_raw") # Prilagodit po potrebi v config.py DOCKER (docker-compose.yml)
+    
+    
+@app.post("/web_register_face/{user_id}")
+async def web_register_face(user_id: str, file: UploadFile = File(...)):
+    user_dir = REGISTRATION_IMAGE_PATH / user_id
+    user_dir.mkdir(parents=True, exist_ok=True) # Ustvari mapo, če ne obstaja
+
+    # Preveri, ali je datoteka dejansko slika (osnovno preverjanje tipa vsebine)
+    if not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="Invalid file type. Only images are allowed.")
+
+    timestamp = datetime.now().strftime('%Y%m%d%H%M%S%f') # Dodajmo milisekunde za unikatnost
+    file_location = user_dir / f"{user_id}_web_{timestamp}.jpg" # Shranjujemo kot jpg
+
+    try:
+        contents = await file.read()
+        # Preverjanje, če je vsebina prazna
+        if not contents:
+            raise HTTPException(status_code=400, detail="Uploaded file is empty.")
+
+        # Shranjevanje
+        with open(file_location, "wb+") as file_object:
+            file_object.write(contents)
+
+        # Tukaj bi lahko posodobili MongoDB, da označite, da ima uporabnik registriran obraz
+        # users_collection.update_one({"username": user_id}, {"$set": {"has_face_id_from_web": True, "face_id_path": str(file_location)}}, upsert=True)
+        print(f"[API] Web face registration image for {user_id} saved to {file_location}")
+        return {"message": f"Face registration image for {user_id} via web saved successfully.", "path": str(file_location)}
+    except HTTPException: # Ponovno sproži HTTPException, da ne pade v splošno Exception
+        raise
+    except Exception as e:
+        print(f"[API ERROR] Could not save web registered image for {user_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Could not save image: {str(e)}")
