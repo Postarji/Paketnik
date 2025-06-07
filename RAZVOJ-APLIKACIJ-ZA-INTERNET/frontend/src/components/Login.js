@@ -14,7 +14,7 @@ function Login() {
     const [showCameraForLogin, setShowCameraForLogin] = useState(false);
     const [loginStatus, setLoginStatus] = useState('');
 
-    async function Login(e) {
+    async function Login(e) { 
         e.preventDefault();
         setError("");
         
@@ -41,6 +41,30 @@ function Login() {
             setError("Network error. Please try again.");
         }
     }
+
+    const startCameraForLogin = async () => {
+        if (!username) {
+            setError("Najprej vnesite uporabniško ime.");
+            return;
+        }
+        setError("");
+        setLoginStatus("Pripravljam kamero...");
+        setShowCameraForLogin(true);
+        try {
+            const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
+            setStreamLogin(mediaStream);
+            if (videoRefLogin.current) {
+                videoRefLogin.current.srcObject = mediaStream;
+            }
+            setLoginStatus("Kamera aktivna. Pripravljeni na zajem za prijavo.");
+        } catch (err) {
+            console.error("Error accessing camera for login:", err);
+            setLoginStatus("Napaka pri dostopu do kamere: " + err.message);
+            setShowCameraForLogin(false);
+        }
+    };
+
+
 
     return (
         <div className="container mt-4">
