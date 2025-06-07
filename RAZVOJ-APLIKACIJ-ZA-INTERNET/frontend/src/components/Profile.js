@@ -87,6 +87,14 @@ function Profile() {
         }
     };
 
+    const stopCamera = () => {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+            setStream(null);
+            if(videoRef.current) videoRef.current.srcObject = null;
+        }
+    };
+
     if (!userContext.user) {
         return <Navigate replace to="/login" />;
     }
