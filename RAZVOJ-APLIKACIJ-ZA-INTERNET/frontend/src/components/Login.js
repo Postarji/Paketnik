@@ -116,9 +116,41 @@ function Login() {
         }
     };
 
+    if (userContext.user) {
+        return <Navigate replace to="/" />;
+    }
 
     return (
         <div className="container mt-4">
+            {/* Modalno okno za kamero pri prijavi */}
+            {showCameraForLogin && (
+                <div className="modal fade show d-block" tabIndex="-1" style={{backgroundColor: "rgba(0,0,0,0.5)"}}>
+                    <div className="modal-dialog modal-dialog-centered">
+                        <div className="modal-content">
+                            <div className="modal-header">
+                                <h5 className="modal-title">Prijava z obrazom</h5>
+                                <button type="button" className="btn-close" onClick={() => { setShowCameraForLogin(false); stopCameraForLogin(); }}></button>
+                            </div>
+                            <div className="modal-body text-center">
+                                <video ref={videoRefLogin} autoPlay playsInline muted width="320" height="240" style={{border: "1px solid #ccc"}}></video>
+                                {streamLogin && (
+                                     <button className="btn btn-success mt-2" onClick={captureAndLoginWithFace}>
+                                        Zajemi obraz in se prijavi
+                                    </button>
+                                )}
+                                {!streamLogin && <p>Prosimo, dovolite dostop do kamere.</p>}
+                                <p className="mt-2">{loginStatus}</p>
+                            </div>
+                            <div className="modal-footer">
+                                <button type="button" className="btn btn-secondary" onClick={() => { setShowCameraForLogin(false); stopCameraForLogin(); }}>
+                                    Prekliči
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="form-container fade-in">
                 <h2 className="text-center mb-4">Login</h2>
                 <form onSubmit={Login}>
@@ -130,7 +162,7 @@ function Login() {
                             name="username"
                             placeholder="Username"
                             value={username}
-                            onChange={(e) => setUsername(e.target.value)}
+                            onChange={(e) => { setUsername(e.target.value); setError(""); }}
                         />
                     </div>
                     <div className="form-group">
@@ -140,7 +172,7 @@ function Login() {
                             name="password"
                             placeholder="Password"
                             value={password}
-                            onChange={(e) => setPassword(e.target.value)}
+                            onChange={(e) => { setPassword(e.target.value); setError(""); }}
                         />
                     </div>
                     {error && (
@@ -148,10 +180,20 @@ function Login() {
                             {error}
                         </div>
                     )}
+                    {!showCameraForLogin && loginStatus && <p className="text-info">{loginStatus}</p>}
                     <button type="submit" className="btn btn-primary w-100">
-                        Login
+                        Login with password
                     </button>
                 </form>
+                {/* Gumb za prijavo z obrazom */}
+                <button 
+                    className="btn btn-info w-100"
+                    onClick={startCameraForLogin}
+                    disabled={!username} // Omogoči šele, ko je vneseno uporabniško ime
+                >
+                    Prijava z obrazom (računalnik)
+                </button>
+                {!username && <small className="form-text text-muted d-block text-center">Za prijavo z obrazom najprej vnesite uporabniško ime.</small>}
             </div>
         </div>
     );
