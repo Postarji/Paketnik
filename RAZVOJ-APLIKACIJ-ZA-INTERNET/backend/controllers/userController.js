@@ -316,5 +316,77 @@ module.exports = {
             return res.status(500).json({ message: "Interna napaka strežnika pri zahtevi za telefon." });
         }
     },
-    
+     loginFaceWebcam: async function(req, res, next) {
+        const { username, imageDataB64 } = req.body; // imageDataB64 bo base64 string slike
+
+        if (!username || !imageDataB64) {
+            return res.status(400).json({ message: "Manjkata uporabniško ime ali podatki slike." });
+        }
+
+        try {
+            // 1. Klic na Python API za initiate_2fa
+            const initiateResponse = await fetch(`${PYTHON_API_URL}/initiate_2fa`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: username })
+            });
+            const initiateData = await initiateResponse.json();
+
+            if (!initiateResponse.ok) {
+                return res.status(initiateResponse.status).json({ message: "Python API /initiate_2fa error: " + (initiateData.detail || initiateResponse.statusText) });
+            }
+            const challengeId = initiateData.challenge_id;
+            console.log(`[NodeJS] loginFaceWebcam: Got challenge_id ${challengeId} for user ${username}`);
+
+            // 2. Priprava slike za pošiljanje na /verify_face
+            // Pretvorba base64 v Buffer in nato v FormData
+            const imageBuffer = Buffer.from(imageDataB64.split(',')[1], 'base64'); // Odstrani 'data:image/jpeg;base64,' del
+            
+            const formData = new FormData();
+            // Ustvari stream iz bufferja, da lahko določi ime datoteke in tip
+            const imageStream = Readable.from(imageBuffer);
+            formData.append('file', imageStream, {
+                filename: `${username}_verify.jpg`,
+                contentType: 'image/jpeg', // Ali 'image/png' odvisno od zajema
+            });
+            
+            // 3.klic na Python API za /verify_face
+            const verifyResponse = await fetch(`${PYTHON_API_URL}/verify_face/${challengeId}`, {
+                method: 'POST',
+                body: formData,
+                headers: formData.getHeaders() // To je potrebno za node-fetch s form-data
+            });
+            const verifyData = await verifyResponse.json();
+
+            if (!verifyResponse.ok) {
+                 return res.status(verifyResponse.status).json({ message: "Python API /verify_face error: " + (verifyData.message || verifyData.detail || verifyResponse.statusText), pythonResponse: verifyData });
+            }
+
+            // 4. Preverjanje odgovora in prijava uporabnika
+            if (verifyData.verified_user === username && verifyData.message.includes("successfully")) { // Prilagodit TODO 
+                console.log(`[NodeJS] loginFaceWebcam: Face verified for ${username}`);
+                // Najdi uporabnika v bazi in ustvari sejo (podobno kot v navadni login funkciji)
+                UserModel.findOne({ username: username }).exec(function(err, user) {
+                    if (err || !user) {
+                        var authError = new Error('Uporabnik po obrazni prijavi ni najden.');
+                        authError.status = 401;
+                        return next(authError);
+                    }
+                    req.session.userId = user._id;
+                    return res.json(user); // Vrni podatke o uporabniku
+                });
+            } else {
+                console.log(`[NodeJS] loginFaceWebcam: Face verification failed for ${username}. API response:`, verifyData);
+                var authFailedError = new Error('Neuspešna prijava z obrazom. Obraz ni prepoznan ali se ne ujema.');
+                authFailedError.status = 401;
+                return next(authFailedError);
+            }
+
+        } catch (error) {
+            console.error("[NodeJS] Error in loginFaceWebcam:", error);
+            return res.status(500).json({ message: "Interna napaka strežnika pri prijavi z obrazom." });
+        }
+    },
+
+
 };
