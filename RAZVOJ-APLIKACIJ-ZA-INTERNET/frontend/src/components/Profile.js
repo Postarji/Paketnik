@@ -95,11 +95,48 @@ function Profile() {
         }
     };
 
-     const handleEnableWebcam2FA = () => {
+    const handleEnableWebcam2FA = () => {
         setShowCameraModal(true);
         startCamera();
     };
 
+    const captureAndRegisterFace = async () => {
+        if (videoRef.current && userContext.user?.username) { // Uporabimo username ali _id
+            const canvas = document.createElement('canvas');
+            canvas.width = videoRef.current.videoWidth;
+            canvas.height = videoRef.current.videoHeight;
+            canvas.getContext('2d').drawImage(videoRef.current, 0, 0);
+            setStatusMessage("Zajemam sliko...");
+
+            canvas.toBlob(async (blob) => {
+                const formData = new FormData();
+                formData.append('file', blob, `${userContext.user.username}_web_reg.jpg`);
+                setStatusMessage("Pošiljam sliko na API...");
+                try {
+                    const response = await fetch(`${PYTHON_API_URL}/web_register_face/${userContext.user.username}`, {
+                        method: 'POST',
+                        body: formData,
+                        // Brez 'Content-Type' glave, brskalnik jo nastavi pravilno za FormData
+                    });
+                    const data = await response.json();
+                    if (response.ok) {
+                        setStatusMessage("Obraz uspešno registriran! " + (data.message || ""));
+                        // Mogoče posodobite stanje uporabnika, da ima nastavljen Face ID
+                    } else {
+                        setStatusMessage("Napaka pri registraciji obraza: " + (data.detail || response.statusText));
+                    }
+                } catch (error) {
+                    console.error("Error registering face:", error);
+                    setStatusMessage("Napaka na strani odjemalca pri registraciji: " + error.message);
+                } finally {
+                    stopCamera();
+                    setShowCameraModal(false); // Zapri modalno okno
+                }
+            }, 'image/jpeg');
+        } else {
+            setStatusMessage("Uporabnik ni prijavljen ali kamera ni pripravljena.");
+        }
+    };
 
     if (!userContext.user) {
         return <Navigate replace to="/login" />;
