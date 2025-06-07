@@ -168,7 +168,7 @@ function Profile() {
         return <Navigate replace to="/login" />;
     }
 
-    if (loading) {
+    if (loading && !profile._id) { // Prilagojeno, da ne kaže nalaganja, če profil že imamo
         return (
             <div className="container mt-4">
                 <div className="d-flex justify-content-center">
@@ -178,6 +178,15 @@ function Profile() {
                 </div>
             </div>
         );
+    }
+
+    // Preveri ali je profil._id definiran pred prikazom
+    if (!profile._id && !loading) {
+        // če fetch ne uspe ali uporabnik ni avtoriziran
+        console.warn("Profile data is not available, user might be logged out or fetch failed.");
+        // Consider redirecting to login if profile fetch fails consistently
+        // return <Navigate replace to="/login" />; // za strožje preusmerjanje
+        return <div className="container mt-4"><p>Could not load profile. Please try logging in again.</p></div>
     }
 
     const totalLikes = userPhotos.reduce((sum, photo) => 
