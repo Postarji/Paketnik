@@ -14,10 +14,10 @@ function Login() {
     const [showCameraForLogin, setShowCameraForLogin] = useState(false);
     const [loginStatus, setLoginStatus] = useState('');
 
-    async function Login(e) { 
+    async function handlePasswordLogin(e) { // preimenovala za jasnost
         e.preventDefault();
         setError("");
-        
+        setLoginStatus("Prijavljam z geslom...");
         try {
             const res = await fetch("http://localhost:3001/users/login", {
                 method: "POST",
@@ -29,18 +29,41 @@ function Login() {
                 })
             });
             
-            if (res.ok) {
-                const data = await res.json();
+             if (res.ok) { 
+            const data = await res.json();
+            if (data && data._id) { 
                 userContext.setUserContext(data);
+                setLoginStatus("Uspešna prijava!");
             } else {
+                // To se verjetno ne bo zgodilo, če je res.ok true in backend vrne pravilen JSON
                 setPassword("");
-                const errorData = await res.json();
-                setError(errorData.message || "Invalid username or password");
+                setError("Nepričakovan odgovor od strežnika po uspešni prijavi.");
+                setLoginStatus("");
             }
-        } catch (err) {
-            setError("Network error. Please try again.");
+        } else {
+            // Obravnava napak, če res.ok ni true (npr. status 401, 400, 500)
+            setPassword(""); // Počisti geslo
+            let errorMessage = "Napačno uporabniško ime ali geslo."; // Privzeto sporočilo
+            try {
+                const errorData = await res.json(); // Poskusi prebrati JSON telo napake
+                if (errorData && errorData.message) {
+                    errorMessage = errorData.message;
+                }
+            } catch (jsonError) {
+                // Če telo odgovora ni JSON, je prazno, ali pride do druge napake pri branju
+                console.error("Could not parse error response JSON or other error:", jsonError);
+                // errorMessage ostane privzet, ali pa ga nastavite na nekaj bolj splošnega
+                // errorMessage = "Prišlo je do napake pri obdelavi odgovora strežnika.";
+            }
+            setError(errorMessage);
+            setLoginStatus("");
         }
+    } catch (err) { // Ta catch lovi napake pri samem fetch klicu (npr. mrežne napake)
+        console.error("Network or other error during password login:", err); 
+        setError("Mrežna napaka ali težava s povezavo do strežnika. Poskusite znova.");
+        setLoginStatus("");
     }
+}
 
     const startCameraForLogin = async () => {
         if (!username) {
@@ -153,7 +176,7 @@ function Login() {
 
             <div className="form-container fade-in">
                 <h2 className="text-center mb-4">Login</h2>
-                <form onSubmit={Login}>
+                <form onSubmit={handlePasswordLogin}>
                     {userContext.user ? <Navigate replace to="/" /> : ""}
                     <div className="form-group">
                         <input
