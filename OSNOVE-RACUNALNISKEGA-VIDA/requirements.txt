@@ -8,3 +8,7 @@ pymongo
 python-dotenv
 python-multipart 
 datetime
+tensorflow>=2.10 
+scikit-learn
+matplotlib
+
