@@ -6,18 +6,14 @@ function Login() {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
-    const userContext = useContext(UserContext);
-
-    // Za zajem slike s kamero pri prijavi
+    const userContext = useContext(UserContext);    // For capturing image with camera during login
     const videoRefLogin = useRef(null);
     const [streamLogin, setStreamLogin] = useState(null);
     const [showCameraForLogin, setShowCameraForLogin] = useState(false);
-    const [loginStatus, setLoginStatus] = useState('');
-
-    async function handlePasswordLogin(e) { // preimenovala za jasnost
+    const [loginStatus, setLoginStatus] = useState('');    async function handlePasswordLogin(e) { // renamed for clarity
         e.preventDefault();
         setError("");
-        setLoginStatus("Prijavljam z geslom...");
+        setLoginStatus("Logging in with password...");
         try {
             const res = await fetch("http://localhost:3001/users/login", {
                 method: "POST",
@@ -30,48 +26,45 @@ function Login() {
             });
             
              if (res.ok) { 
-            const data = await res.json();
-            if (data && data._id) { 
+            const data = await res.json();            if (data && data._id) { 
                 userContext.setUserContext(data);
-                setLoginStatus("Uspešna prijava!");
+                setLoginStatus("Login successful!");
             } else {
-                // To se verjetno ne bo zgodilo, če je res.ok true in backend vrne pravilen JSON
+                // This probably won't happen if res.ok is true and backend returns proper JSON
                 setPassword("");
-                setError("Nepričakovan odgovor od strežnika po uspešni prijavi.");
+                setError("Unexpected response from server after successful login.");
                 setLoginStatus("");
             }
         } else {
-            // Obravnava napak, če res.ok ni true (npr. status 401, 400, 500)
-            setPassword(""); // Počisti geslo
-            let errorMessage = "Napačno uporabniško ime ali geslo."; // Privzeto sporočilo
+            // Handle errors if res.ok is not true (e.g. status 401, 400, 500)
+            setPassword(""); // Clear password
+            let errorMessage = "Incorrect username or password."; // Default message
             try {
-                const errorData = await res.json(); // Poskusi prebrati JSON telo napake
+                const errorData = await res.json(); // Try to read JSON error body
                 if (errorData && errorData.message) {
                     errorMessage = errorData.message;
                 }
             } catch (jsonError) {
-                // Če telo odgovora ni JSON, je prazno, ali pride do druge napake pri branju
+                // If response body is not JSON, is empty, or other error occurs while reading
                 console.error("Could not parse error response JSON or other error:", jsonError);
-                // errorMessage ostane privzet, ali pa ga nastavite na nekaj bolj splošnega
-                // errorMessage = "Prišlo je do napake pri obdelavi odgovora strežnika.";
+                // errorMessage remains default, or set it to something more general
+                // errorMessage = "Error occurred while processing server response.";
             }
             setError(errorMessage);
             setLoginStatus("");
         }
-    } catch (err) { // Ta catch lovi napake pri samem fetch klicu (npr. mrežne napake)
+    } catch (err) { // This catch handles errors from the fetch call itself (e.g. network errors)
         console.error("Network or other error during password login:", err); 
-        setError("Mrežna napaka ali težava s povezavo do strežnika. Poskusite znova.");
+        setError("Network error or connection problem to server. Please try again.");
         setLoginStatus("");
     }
-}
-
-    const startCameraForLogin = async () => {
+}    const startCameraForLogin = async () => {
         if (!username) {
-            setError("Najprej vnesite uporabniško ime.");
+            setError("Please enter username first.");
             return;
         }
         setError("");
-        setLoginStatus("Pripravljam kamero...");
+        setLoginStatus("Preparing camera...");
         setShowCameraForLogin(true);
         try {
             const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -79,10 +72,10 @@ function Login() {
             if (videoRefLogin.current) {
                 videoRefLogin.current.srcObject = mediaStream;
             }
-            setLoginStatus("Kamera aktivna. Pripravljeni na zajem za prijavo.");
+            setLoginStatus("Camera active. Ready to capture for login.");
         } catch (err) {
             console.error("Error accessing camera for login:", err);
-            setLoginStatus("Napaka pri dostopu do kamere: " + err.message);
+            setLoginStatus("Error accessing camera: " + err.message);
             setShowCameraForLogin(false);
         }
     };
@@ -93,19 +86,17 @@ function Login() {
             setStreamLogin(null);
             if(videoRefLogin.current) videoRefLogin.current.srcObject = null;
         }
-    };
-
-     const captureAndLoginWithFace = async () => {
+    };     const captureAndLoginWithFace = async () => {
         if (videoRefLogin.current && username) {
             const canvas = document.createElement('canvas');
             canvas.width = videoRefLogin.current.videoWidth;
             canvas.height = videoRefLogin.current.videoHeight;
             canvas.getContext('2d').drawImage(videoRefLogin.current, 0, 0);
-            setLoginStatus("Zajemam sliko za prijavo...");
+            setLoginStatus("Capturing image for login...");
 
-            const imageDataB64 = canvas.toDataURL('image/jpeg'); // Dobimo base64 string
+            const imageDataB64 = canvas.toDataURL('image/jpeg'); // Get base64 string
 
-            setLoginStatus("Pošiljam podatke za prijavo z obrazom...");
+            setLoginStatus("Sending face login data...");
             try {
                 const response = await fetch("http://localhost:3001/users/login-face-webcam", {
                     method: 'POST',
@@ -119,22 +110,22 @@ function Login() {
                 const data = await response.json();
                 if (response.ok && data._id) {
                     userContext.setUserContext(data);
-                    setLoginStatus("Uspešna prijava z obrazom!");
+                    setLoginStatus("Successful face login!");
                     setShowCameraForLogin(false);
                 } else {
-                    setError("Prijava z obrazom ni uspela: " + (data.message || response.statusText));
+                    setError("Face login failed: " + (data.message || response.statusText));
                     setLoginStatus("");
                 }
             } catch (error) {
                 console.error("Error logging in with face:", error);
-                setError("Napaka na strani odjemalca pri prijavi z obrazom: " + error.message);
+                setError("Client-side error during face login: " + error.message);
                 setLoginStatus("");
             } finally {
                 stopCameraForLogin();
-                 // setShowCameraForLogin(false); // Že zgoraj, če uspe
+                 // setShowCameraForLogin(false); // Already above if successful
             }
         } else {
-            setError("Uporabniško ime manjka ali kamera ni pripravljena.");
+            setError("Username is missing or camera is not ready.");
             setLoginStatus("");
         }
     };
@@ -143,30 +134,29 @@ function Login() {
         return <Navigate replace to="/" />;
     }
 
-    return (
-        <div className="container mt-4">
-            {/* Modalno okno za kamero pri prijavi */}
+    return (        <div className="container mt-4">
+            {/* Modal window for camera during login */}
             {showCameraForLogin && (
                 <div className="modal fade show d-block" tabIndex="-1" style={{backgroundColor: "rgba(0,0,0,0.5)"}}>
                     <div className="modal-dialog modal-dialog-centered">
                         <div className="modal-content">
                             <div className="modal-header">
-                                <h5 className="modal-title">Prijava z obrazom</h5>
+                                <h5 className="modal-title">Face Login</h5>
                                 <button type="button" className="btn-close" onClick={() => { setShowCameraForLogin(false); stopCameraForLogin(); }}></button>
                             </div>
                             <div className="modal-body text-center">
                                 <video ref={videoRefLogin} autoPlay playsInline muted width="320" height="240" style={{border: "1px solid #ccc"}}></video>
                                 {streamLogin && (
                                      <button className="btn btn-success mt-2" onClick={captureAndLoginWithFace}>
-                                        Zajemi obraz in se prijavi
+                                        Capture Face and Login
                                     </button>
                                 )}
-                                {!streamLogin && <p>Prosimo, dovolite dostop do kamere.</p>}
+                                {!streamLogin && <p>Please allow camera access.</p>}
                                 <p className="mt-2">{loginStatus}</p>
                             </div>
                             <div className="modal-footer">
                                 <button type="button" className="btn btn-secondary" onClick={() => { setShowCameraForLogin(false); stopCameraForLogin(); }}>
-                                    Prekliči
+                                    Cancel
                                 </button>
                             </div>
                         </div>
@@ -206,17 +196,17 @@ function Login() {
                     {!showCameraForLogin && loginStatus && <p className="text-info">{loginStatus}</p>}
                     <button type="submit" className="btn btn-primary w-100">
                         Login with password
-                    </button>
-                </form>
-                {/* Gumb za prijavo z obrazom */}
+                    </button>                </form>
+                {/* Button for face login */}
                 <button 
-                    className="btn btn-info w-100"
+                    className="btn btn-outline-primary w-100 mt-3"
                     onClick={startCameraForLogin}
-                    disabled={!username} // Omogoči šele, ko je vneseno uporabniško ime
+                    disabled={!username} // Enable only when username is entered
                 >
-                    Prijava z obrazom (računalnik)
+                    <i className="bi bi-camera-fill me-2"></i>
+                    Face Login (Computer Camera)
                 </button>
-                {!username && <small className="form-text text-muted d-block text-center">Za prijavo z obrazom najprej vnesite uporabniško ime.</small>}
+                {!username && <small className="form-text text-muted d-block text-center mt-2">Please enter username first to use face login.</small>}
             </div>
         </div>
     );
