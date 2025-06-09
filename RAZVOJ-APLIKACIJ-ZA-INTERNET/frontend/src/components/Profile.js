@@ -10,9 +10,7 @@ function Profile() {
     const [userPhotos, setUserPhotos] = useState([]);
     const [boxes, setBoxes] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState('posts'); // 'posts' or 'boxes'
-
-    // Za zajem slike s kamero
+    const [activeTab, setActiveTab] = useState('posts'); // 'posts' or 'boxes'    // For capturing image with camera
     const videoRef = useRef(null);
     const [stream, setStream] = useState(null);
     const [showCameraModal, setShowCameraModal] = useState(false);
@@ -71,19 +69,17 @@ function Profile() {
                 ? photo.path 
                 : `images/${photo.path}`;
         return `http://localhost:3001/${imagePath}`;
-    };
-
-    const startCamera = async () => {
+    };    const startCamera = async () => {
         try {
             const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
             setStream(mediaStream);
             if (videoRef.current) {
                 videoRef.current.srcObject = mediaStream;
             }
-            setStatusMessage("Kamera aktivna. Pripravljeni na zajem.");
+            setStatusMessage("Camera active. Ready to capture.");
         } catch (err) {
             console.error("Error accessing camera:", err);
-            setStatusMessage("Napaka pri dostopu do kamere: " + err.message);
+            setStatusMessage("Error accessing camera: " + err.message);
         }
     };
 
@@ -98,77 +94,71 @@ function Profile() {
     const handleEnableWebcam2FA = () => {
         setShowCameraModal(true);
         startCamera();
-    };
-
-    const captureAndRegisterFace = async () => {
-        if (videoRef.current && userContext.user?.username) { // Uporabimo username ali _id
+    };    const captureAndRegisterFace = async () => {
+        if (videoRef.current && userContext.user?.username) { // Use username or _id
             const canvas = document.createElement('canvas');
             canvas.width = videoRef.current.videoWidth;
             canvas.height = videoRef.current.videoHeight;
             canvas.getContext('2d').drawImage(videoRef.current, 0, 0);
-            setStatusMessage("Zajemam sliko...");
+            setStatusMessage("Capturing image...");
 
             canvas.toBlob(async (blob) => {
                 const formData = new FormData();
                 formData.append('file', blob, `${userContext.user.username}_web_reg.jpg`);
-                setStatusMessage("Pošiljam sliko na API...");
+                setStatusMessage("Sending image to API...");
                 try {
                     const response = await fetch(`${PYTHON_API_URL}/web_register_face/${userContext.user.username}`, {
                         method: 'POST',
                         body: formData,
-                        // Brez 'Content-Type' glave, brskalnik jo nastavi pravilno za FormData
+                        // Without 'Content-Type' header, browser sets it correctly for FormData
                     });
                     const data = await response.json();
                     if (response.ok) {
-                        setStatusMessage("Obraz uspešno registriran! " + (data.message || ""));
-                        // Mogoče posodobite stanje uporabnika, da ima nastavljen Face ID
+                        setStatusMessage("Face successfully registered! " + (data.message || ""));
+                        // Maybe update user state to show Face ID is set up
                     } else {
-                        setStatusMessage("Napaka pri registraciji obraza: " + (data.detail || response.statusText));
+                        setStatusMessage("Error registering face: " + (data.detail || response.statusText));
                     }
                 } catch (error) {
                     console.error("Error registering face:", error);
-                    setStatusMessage("Napaka na strani odjemalca pri registraciji: " + error.message);
+                    setStatusMessage("Client-side error during registration: " + error.message);
                 } finally {
                     stopCamera();
-                    setShowCameraModal(false); // Zapri modalno okno
+                    setShowCameraModal(false); // Close modal window
                 }
             }, 'image/jpeg');
         } else {
-            setStatusMessage("Uporabnik ni prijavljen ali kamera ni pripravljena.");
+            setStatusMessage("User not logged in or camera not ready.");
         }
-    };
-
-    const handleRequestPhone2FASetup = async () => {
+    };    const handleRequestPhone2FASetup = async () => {
         if (!userContext.user?._id) {
-            setStatusMessage("Uporabnik ni prijavljen.");
+            setStatusMessage("User not logged in.");
             return;
         }
-        setStatusMessage("Pošiljam zahtevo za nastavitev 2FA preko telefona...");
+        setStatusMessage("Sending request for phone 2FA setup...");
         try {
             const response = await fetch("http://localhost:3001/users/request-phone-2fa-setup", {
                 method: "POST",
-                credentials: "include", // Pomembno za pošiljanje piškotka seje
+                credentials: "include", // Important for sending session cookie
                 headers: { 'Content-Type': 'application/json' },
-                // Telo ni potrebno, ker Node.js backend dobi userId iz seje
+                // Body not needed as Node.js backend gets userId from session
             });
             const data = await response.json();
             if (response.ok) {
-                setStatusMessage(data.message || "Zahteva uspešno poslana. Sledite navodilom na mobilni napravi.");
+                setStatusMessage(data.message || "Request sent successfully. Follow instructions on your mobile device.");
             } else {
-                setStatusMessage("Napaka pri pošiljanju zahteve: " + (data.message || response.statusText));
+                setStatusMessage("Error sending request: " + (data.message || response.statusText));
             }
         } catch (error) {
             console.error("Error requesting phone 2FA setup:", error);
-            setStatusMessage("Napaka na strani odjemalca: " + error.message);
+            setStatusMessage("Client-side error: " + error.message);
         }
     };
 
 
     if (!userContext.user) {
         return <Navigate replace to="/login" />;
-    }
-
-    if (loading && !profile._id) { // Prilagojeno, da ne kaže nalaganja, če profil že imamo
+    }    if (loading && !profile._id) { // Adjusted to not show loading if we already have profile
         return (
             <div className="container mt-4">
                 <div className="d-flex justify-content-center">
@@ -178,14 +168,12 @@ function Profile() {
                 </div>
             </div>
         );
-    }
-
-    // Preveri ali je profil._id definiran pred prikazom
+    }    // Check if profile._id is defined before display
     if (!profile._id && !loading) {
-        // če fetch ne uspe ali uporabnik ni avtoriziran
+        // If fetch fails or user is not authorized
         console.warn("Profile data is not available, user might be logged out or fetch failed.");
         // Consider redirecting to login if profile fetch fails consistently
-        // return <Navigate replace to="/login" />; // za strožje preusmerjanje
+        // return <Navigate replace to="/login" />; // for stricter redirection
         return <div className="container mt-4"><p>Could not load profile. Please try logging in again.</p></div>
     }
 
@@ -193,30 +181,29 @@ function Profile() {
         sum + (photo.likes?.length || 0), 0
     );
 
-    return (
-        <div className="container mt-4">
-            {/* Modalno okno za kamero */}
+    return (        <div className="container mt-4">
+            {/* Camera modal window */}
             {showCameraModal && (
                 <div className="modal fade show d-block" tabIndex="-1" style={{backgroundColor: "rgba(0,0,0,0.5)"}}>
                     <div className="modal-dialog modal-dialog-centered">
                         <div className="modal-content">
                             <div className="modal-header">
-                                <h5 className="modal-title">Nastavi 2FA z Web kamero</h5>
+                                <h5 className="modal-title">Setup 2FA with Web Camera</h5>
                                 <button type="button" className="btn-close" onClick={() => { setShowCameraModal(false); stopCamera(); }}></button>
                             </div>
                             <div className="modal-body text-center">
                                 <video ref={videoRef} autoPlay playsInline muted width="320" height="240" style={{border: "1px solid #ccc"}}></video>
                                 {stream && (
                                      <button className="btn btn-success mt-2" onClick={captureAndRegisterFace}>
-                                        Zajemi in shrani obraz
+                                        Capture and Save Face
                                     </button>
                                 )}
-                                {!stream && <p>Prosimo, dovolite dostop do kamere.</p>}
+                                {!stream && <p>Please allow camera access.</p>}
                                 <p className="mt-2">{statusMessage}</p>
                             </div>
                             <div className="modal-footer">
                                 <button type="button" className="btn btn-secondary" onClick={() => { setShowCameraModal(false); stopCamera(); }}>
-                                    Prekliči
+                                    Cancel
                                 </button>
                             </div>
                         </div>
@@ -243,22 +230,23 @@ function Profile() {
                                         <h5>{totalLikes}</h5>
                                         <small>Total Likes</small>
                                     </div>
-                                </div>
-                            </div>
-                            {/* GUMBI ZA 2FA */}
+                                </div>                            </div>
+                            {/* 2FA BUTTONS */}
                             <div className="mt-4">
-                                <h5>Nastavitve 2FA</h5>
+                                <h5 className="mb-3">2FA Settings</h5>
                                 <button 
-                                    className="btn btn-info w-100 mb-2"
+                                    className="btn btn-outline-success w-100 mb-2 d-flex align-items-center justify-content-center"
                                     onClick={handleEnableWebcam2FA}
                                 >
-                                    Nastavi 2FA z računalniško kamero
+                                    <i className="bi bi-camera-video me-2"></i>
+                                    Setup 2FA with Computer Camera
                                 </button>
                                 <button 
-                                    className="btn btn-warning w-100"
+                                    className="btn btn-outline-warning w-100 d-flex align-items-center justify-content-center"
                                     onClick={handleRequestPhone2FASetup}
                                 >
-                                    Zahtevaj nastavitev 2FA preko telefona
+                                    <i className="bi bi-phone me-2"></i>
+                                    Request 2FA Setup via Phone
                                 </button>
                                 {statusMessage && !showCameraModal && <p className="mt-2 text-muted small">{statusMessage}</p>}
                             </div>
