@@ -13,6 +13,7 @@ import android.util.Log
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.google.zxing.integration.android.IntentIntegrator
 import kotlinx.coroutines.CoroutineScope
@@ -36,6 +37,7 @@ import java.util.zip.ZipInputStream
 class MainActivity : AppCompatActivity() {
     private var boxId: String? = "540"
     private var mediaPlayer: MediaPlayer? = null
+    private var currentBoxId: String? = null // Track current box ID for history
 
     private val TAG = "MainActivity"
     private val tokenFormat = 4
@@ -51,10 +53,17 @@ class MainActivity : AppCompatActivity() {
         val openBoxButton: Button = findViewById(R.id.openBoxButton)
         val statusText: TextView = findViewById(R.id.statusText)
         val btnGoToLogin: TextView = findViewById(R.id.btnGoToLogin)
+        val btnHistory: Button = findViewById(R.id.btnHistory)
 
         // Go to login screen
         btnGoToLogin.setOnClickListener {
             val intent = Intent(this, LoginActivity::class.java)
+            startActivity(intent)
+        }
+
+        // Go to history screen
+        btnHistory.setOnClickListener {
+            val intent = Intent(this, HistoryActivity::class.java)
             startActivity(intent)
         }
 
@@ -66,6 +75,7 @@ class MainActivity : AppCompatActivity() {
 
         openBoxButton.setOnClickListener {
             boxId?.let {
+                currentBoxId = it // Store current box ID for history
                 statusText.text = "Opening box $it..."
                 openBox(it, tokenFormat)
             }
@@ -145,6 +155,9 @@ class MainActivity : AppCompatActivity() {
                     withContext(Dispatchers.Main) {
                         updateStatus("Server Error: $statusCode")
                         Toast.makeText(this@MainActivity, "Server Error: $statusCode - $errorBody", Toast.LENGTH_LONG).show()
+                        currentBoxId?.let {
+                            HistoryManager.addHistoryEntry(this@MainActivity, it, false, "API_ERROR")
+                        }
                     }
                     return@launch
                 }
@@ -153,6 +166,9 @@ class MainActivity : AppCompatActivity() {
                     withContext(Dispatchers.Main) {
                         updateStatus("Empty response")
                         Toast.makeText(this@MainActivity, "Empty response from server", Toast.LENGTH_LONG).show()
+                        currentBoxId?.let {
+                            HistoryManager.addHistoryEntry(this@MainActivity, it, false, "EMPTY_RESPONSE")
+                        }
                     }
                     return@launch
                 }
@@ -162,6 +178,9 @@ class MainActivity : AppCompatActivity() {
                     withContext(Dispatchers.Main) {
                         updateStatus("Invalid response format")
                         Toast.makeText(this@MainActivity, "No data field in response", Toast.LENGTH_LONG).show()
+                        currentBoxId?.let {
+                            HistoryManager.addHistoryEntry(this@MainActivity, it, false, "INVALID_RESPONSE")
+                        }
                     }
                     return@launch
                 }
@@ -174,6 +193,9 @@ class MainActivity : AppCompatActivity() {
                     withContext(Dispatchers.Main) {
                         updateStatus("Error: result=$result, error=$errorNumber")
                         Toast.makeText(this@MainActivity, "Invalid token: result=$result, error=$errorNumber", Toast.LENGTH_LONG).show()
+                        currentBoxId?.let {
+                            HistoryManager.addHistoryEntry(this@MainActivity, it, false, "INVALID_TOKEN")
+                        }
                     }
                     return@launch
                 }
@@ -195,12 +217,18 @@ class MainActivity : AppCompatActivity() {
                 withContext(Dispatchers.Main) {
                     updateStatus("Invalid JSON response")
                     Toast.makeText(this@MainActivity, "Invalid JSON: ${e.message}", Toast.LENGTH_LONG).show()
+                    currentBoxId?.let {
+                        HistoryManager.addHistoryEntry(this@MainActivity, it, false, "JSON_ERROR")
+                    }
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error: ${e.message}", e)
                 withContext(Dispatchers.Main) {
                     updateStatus("Error: ${e.javaClass.simpleName}")
                     Toast.makeText(this@MainActivity, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+                    currentBoxId?.let {
+                        HistoryManager.addHistoryEntry(this@MainActivity, it, false, "NETWORK_ERROR")
+                    }
                 }
             }
         }
@@ -253,7 +281,6 @@ class MainActivity : AppCompatActivity() {
                         .setLegacyStreamType(AudioManager.STREAM_MUSIC)
                         .build()
                 )
-                // Set maximum volume
                 setVolume(1.0f, 1.0f)
 
                 prepare()
@@ -263,20 +290,25 @@ class MainActivity : AppCompatActivity() {
             // Handle completion
             mediaPlayer?.setOnCompletionListener {
                 Log.d(TAG, "Playback finished")
-                updateStatus("Box opened successfully!")
-                Toast.makeText(this@MainActivity, "Token playback completed", Toast.LENGTH_SHORT).show()
+                updateStatus("Token playback completed")
+
+                showBoxOpeningResultDialog()
+
                 it.release()
                 mediaPlayer = null
                 file.delete()
             }
 
-            // Handle errors
             mediaPlayer?.setOnErrorListener { mp, what, extra ->
                 Log.e(TAG, "MediaPlayer error: what=$what, extra=$extra")
                 updateStatus("Playback error: $what")
                 mp.release()
                 mediaPlayer = null
                 file.delete()
+
+                currentBoxId?.let {
+                    HistoryManager.addHistoryEntry(this@MainActivity, it, false, "PLAYBACK_ERROR")
+                }
                 true
             }
 
@@ -285,10 +317,37 @@ class MainActivity : AppCompatActivity() {
             runOnUiThread {
                 updateStatus("Playback error")
                 Toast.makeText(this@MainActivity, "Playback error: ${e.message}", Toast.LENGTH_LONG).show()
+                currentBoxId?.let {
+                    HistoryManager.addHistoryEntry(this@MainActivity, it, false, "PLAYBACK_ERROR")
+                }
             }
             file.delete()
             mediaPlayer?.release()
             mediaPlayer = null
+        }
+    }
+
+    private fun showBoxOpeningResultDialog() {
+        runOnUiThread {
+            AlertDialog.Builder(this)
+                .setTitle("Box Opening Result")
+                .setMessage("Did you successfully open the box?")
+                .setPositiveButton("Yes, it opened!") { _, _ ->
+                    currentBoxId?.let {
+                        HistoryManager.addHistoryEntry(this@MainActivity, it, true, "QR_SCAN")
+                    }
+                    updateStatus("Box opened successfully!")
+                    Toast.makeText(this@MainActivity, "Success recorded in history", Toast.LENGTH_SHORT).show()
+                }
+                .setNegativeButton("No, it didn't open") { _, _ ->
+                    currentBoxId?.let {
+                        HistoryManager.addHistoryEntry(this@MainActivity, it, false, "USER_REPORTED_FAILURE")
+                    }
+                    updateStatus("Box opening failed")
+                    Toast.makeText(this@MainActivity, "Failure recorded in history", Toast.LENGTH_SHORT).show()
+                }
+                .setCancelable(false)
+                .show()
         }
     }
 
