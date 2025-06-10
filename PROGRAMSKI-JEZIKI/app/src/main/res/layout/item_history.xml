@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="4dp"
+    android:layout_margin="8dp"
     app:cardCornerRadius="8dp"
     app:cardElevation="4dp">
 
@@ -11,14 +11,14 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:padding="16dp"
-        android:gravity="center_vertical">
+        android:padding="16dp">
 
         <ImageView
             android:id="@+id/ivStatus"
             android:layout_width="24dp"
             android:layout_height="24dp"
-            android:layout_marginEnd="12dp"
+            android:layout_gravity="center_vertical"
+            android:layout_marginEnd="16dp"
             android:src="@android:drawable/ic_dialog_info" />
 
         <LinearLayout
@@ -33,16 +33,36 @@
                 android:layout_height="wrap_content"
                 android:text="Box ID: 540"
                 android:textSize="16sp"
-                android:textStyle="bold"
-                android:textColor="@android:color/black" />
+                android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/tvTimestamp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="9. 6. 2024 - 13:30"
-                android:textSize="14sp"
-                android:textColor="@android:color/darker_gray" />
+                android:layout_marginTop="4dp"
+                android:text="Jan 15, 2024 - 14:30"
+                android:textColor="@android:color/darker_gray"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/tvLocation"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="📍 Main Street, Ljubljana, Slovenia"
+                android:textColor="@android:color/darker_gray"
+                android:textSize="13sp"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/tvCoordinates"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="Lat: 46.056946, Lng: 14.505751 (±10m)"
+                android:textColor="@android:color/darker_gray"
+                android:textSize="11sp"
+                android:visibility="gone" />
 
         </LinearLayout>
 
@@ -50,12 +70,14 @@
             android:id="@+id/tvResult"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:background="@android:color/holo_green_dark"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="6dp"
             android:text="SUCCESS"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:padding="8dp"
-            android:background="@drawable/result_background"
-            android:textColor="@android:color/white" />
+            android:textColor="@android:color/white"
+            android:textSize="12sp"
+            android:textStyle="bold" />
 
     </LinearLayout>
 

@@ -2,10 +2,12 @@ package com.example.postarjiapp
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.example.postarjiapp.useCases.RegisterUseCase
 
 class RegisterActivity : AppCompatActivity() {
 
@@ -32,8 +34,21 @@ class RegisterActivity : AppCompatActivity() {
                 Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show()
             } else {
                 val request = RegisterRequest(username, email, password)
+                val registerUseCase = RegisterUseCase()
 
-                ApiClient.instance.register(request).enqueue(object : retrofit2.Callback<UserResponse> {
+                try {
+                    Log.d("debug", "debug")
+                    val userResponse = registerUseCase(request)
+                    Log.d("debug", userResponse.toString())
+                    Toast.makeText(this@RegisterActivity, "Welcome ${userResponse.username}!", Toast.LENGTH_SHORT).show()
+
+                    val intent = Intent(this@RegisterActivity, LoginActivity::class.java)
+                    startActivity(intent)
+                    finish()
+                } catch (e:Exception){
+                    Toast.makeText(this@RegisterActivity, "Registration failed: ${e.message.toString()}", Toast.LENGTH_SHORT).show()
+                }
+                /*ApiClient.instance.register(request).enqueue(object : retrofit2.Callback<UserResponse> {
                     override fun onResponse(call: retrofit2.Call<UserResponse>, response: retrofit2.Response<UserResponse>) {
                         if (response.isSuccessful && response.body() != null) {
                             val userResponse = response.body()!!
@@ -50,7 +65,7 @@ class RegisterActivity : AppCompatActivity() {
                     override fun onFailure(call: retrofit2.Call<UserResponse>, t: Throwable) {
                         Toast.makeText(this@RegisterActivity, "Error: ${t.message}", Toast.LENGTH_SHORT).show()
                     }
-                })
+                })*/
             }
         }
     }

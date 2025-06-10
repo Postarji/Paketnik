@@ -112,7 +112,7 @@ class FaceVerificationActivity : AppCompatActivity() {
         val requestFile = imageFile.asRequestBody("image/jpeg".toMediaTypeOrNull())
         val body = MultipartBody.Part.createFormData("file", imageFile.name, requestFile)
 
-        ApiClient.instance.verifyFace(challengeId, body).enqueue(object : retrofit2.Callback<VerifyFaceResponse> {
+        ApiClient.instance().verifyFace(challengeId, body).enqueue(object : retrofit2.Callback<VerifyFaceResponse> {
             override fun onResponse(
                 call: retrofit2.Call<VerifyFaceResponse>,
                 response: retrofit2.Response<VerifyFaceResponse>

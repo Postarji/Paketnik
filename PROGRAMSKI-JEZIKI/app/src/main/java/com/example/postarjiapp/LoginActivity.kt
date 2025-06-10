@@ -2,11 +2,14 @@ package com.example.postarjiapp
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.example.postarjiapp.useCases.LoginUseCase
+import com.example.postarjiapp.useCases.RegisterUseCase
 
 class LoginActivity : AppCompatActivity() {
 
@@ -37,8 +40,20 @@ class LoginActivity : AppCompatActivity() {
                 Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show()
             } else {
                 val request = LoginRequest(username, password)
+                val loginUseCase = LoginUseCase()
 
-                ApiClient.instance.login(request).enqueue(object : retrofit2.Callback<UserResponse> {
+                try {
+                    val userResponse = loginUseCase(request)
+                    Toast.makeText(this@LoginActivity, "Credentials verified. Initiating 2FA...", Toast.LENGTH_SHORT).show()
+
+                    val intent = Intent(this@LoginActivity, MainActivity::class.java)
+                    startActivity(intent)
+                    finish()
+                } catch (e:Exception){
+                    Toast.makeText(this@LoginActivity, "Login failed", Toast.LENGTH_SHORT).show()
+                }
+
+                /*ApiClient.instance.login(request).enqueue(object : retrofit2.Callback<UserResponse> {
                     override fun onResponse(
                         call: retrofit2.Call<UserResponse>,
                         response: retrofit2.Response<UserResponse>
@@ -56,13 +71,13 @@ class LoginActivity : AppCompatActivity() {
                     override fun onFailure(call: retrofit2.Call<UserResponse>, t: Throwable) {
                         Toast.makeText(this@LoginActivity, "Error: ${t.message}", Toast.LENGTH_SHORT).show()
                     }
-                })
+                })*/
             }
         }
     }
 
     private fun initiate2FA(userId: String) {
-        ApiClient.instance.initiate2FA(userId).enqueue(object : retrofit2.Callback<InitiateTwoFAResponse> {
+        ApiClient.instance().initiate2FA(userId).enqueue(object : retrofit2.Callback<InitiateTwoFAResponse> {
             override fun onResponse(
                 call: retrofit2.Call<InitiateTwoFAResponse>,
                 response: retrofit2.Response<InitiateTwoFAResponse>

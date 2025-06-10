@@ -12,7 +12,7 @@ import retrofit2.http.Query
 
 interface ApiService {
     @POST("login")
-    fun login(@Body request: LoginRequest): Call<UserResponse>
+    fun login(@Body request: LoginRequest): UserResponse
 
     // New 2FA endpoints
     @POST("initiate_2fa")
@@ -28,7 +28,7 @@ interface ApiService {
     @GET("check_2fa_status/{challenge_id}")
     fun check2FAStatus(@Path("challenge_id") challengeId: String): Call<TwoFAStatusResponse>
     @POST("register")
-    fun register(@Body request: RegisterRequest): Call<UserResponse>
+    fun register(@Body request: RegisterRequest): UserResponse
 }
 
 // Data classes for 2FA API responses

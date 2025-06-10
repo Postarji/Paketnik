@@ -3,9 +3,7 @@ package com.example.postarjiapp
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.media.AudioAttributes
-import android.media.AudioFormat
 import android.media.AudioManager
-import android.media.AudioTrack
 import android.media.MediaPlayer
 import android.os.Bundle
 import android.util.Base64
@@ -82,7 +80,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    //QR Code scanner launched
+    // QR Code scanner launched
     private fun startScan() {
         IntentIntegrator(this).apply {
             setDesiredBarcodeFormats(IntentIntegrator.QR_CODE)
@@ -92,7 +90,8 @@ class MainActivity : AppCompatActivity() {
             initiateScan()
         }
     }
-    //Handling QR Code scan results
+
+    // Handling QR Code scan results
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         val result = IntentIntegrator.parseActivityResult(requestCode, resultCode, data)
         if (result != null && result.contents != null) {
@@ -106,7 +105,8 @@ class MainActivity : AppCompatActivity() {
             super.onActivityResult(requestCode, resultCode, data)
         }
     }
-    //sending API request for opening the box
+
+    // Sending API request for opening the box
     private fun openBox(boxId: String, tokenFormat: Int) {
         val client = OkHttpClient.Builder()
             .addInterceptor(HttpLoggingInterceptor().apply {
@@ -135,9 +135,9 @@ class MainActivity : AppCompatActivity() {
         Log.d(TAG, "Request JSON: $json")
 
         val request = Request.Builder()
-            .url("https://api-d4me-stage.direct4.me/sandbox/v1/Access/openbox")
+            .url(apiUrl)
             .post(json.toRequestBody("application/json".toMediaType()))
-            .addHeader("Authorization", "Bearer 9ea96945-3a37-4638-a5d4-22e89fbc998f")
+            .addHeader("Authorization", bearerToken)
             .addHeader("Content-Type", "application/json")
             .addHeader("User-Agent", "Direct4MeApp/1.0")
             .build()
@@ -156,7 +156,7 @@ class MainActivity : AppCompatActivity() {
                         updateStatus("Server Error: $statusCode")
                         Toast.makeText(this@MainActivity, "Server Error: $statusCode - $errorBody", Toast.LENGTH_LONG).show()
                         currentBoxId?.let {
-                            HistoryManager.addHistoryEntry(this@MainActivity, it, false, "API_ERROR")
+                            HistoryManager.addHistoryEntryWithLocation(this@MainActivity, it, false, "API_ERROR")
                         }
                     }
                     return@launch
@@ -167,7 +167,7 @@ class MainActivity : AppCompatActivity() {
                         updateStatus("Empty response")
                         Toast.makeText(this@MainActivity, "Empty response from server", Toast.LENGTH_LONG).show()
                         currentBoxId?.let {
-                            HistoryManager.addHistoryEntry(this@MainActivity, it, false, "EMPTY_RESPONSE")
+                            HistoryManager.addHistoryEntryWithLocation(this@MainActivity, it, false, "EMPTY_RESPONSE")
                         }
                     }
                     return@launch
@@ -179,7 +179,7 @@ class MainActivity : AppCompatActivity() {
                         updateStatus("Invalid response format")
                         Toast.makeText(this@MainActivity, "No data field in response", Toast.LENGTH_LONG).show()
                         currentBoxId?.let {
-                            HistoryManager.addHistoryEntry(this@MainActivity, it, false, "INVALID_RESPONSE")
+                            HistoryManager.addHistoryEntryWithLocation(this@MainActivity, it, false, "INVALID_RESPONSE")
                         }
                     }
                     return@launch
@@ -194,7 +194,7 @@ class MainActivity : AppCompatActivity() {
                         updateStatus("Error: result=$result, error=$errorNumber")
                         Toast.makeText(this@MainActivity, "Invalid token: result=$result, error=$errorNumber", Toast.LENGTH_LONG).show()
                         currentBoxId?.let {
-                            HistoryManager.addHistoryEntry(this@MainActivity, it, false, "INVALID_TOKEN")
+                            HistoryManager.addHistoryEntryWithLocation(this@MainActivity, it, false, "INVALID_TOKEN")
                         }
                     }
                     return@launch
@@ -218,7 +218,7 @@ class MainActivity : AppCompatActivity() {
                     updateStatus("Invalid JSON response")
                     Toast.makeText(this@MainActivity, "Invalid JSON: ${e.message}", Toast.LENGTH_LONG).show()
                     currentBoxId?.let {
-                        HistoryManager.addHistoryEntry(this@MainActivity, it, false, "JSON_ERROR")
+                        HistoryManager.addHistoryEntryWithLocation(this@MainActivity, it, false, "JSON_ERROR")
                     }
                 }
             } catch (e: Exception) {
@@ -227,13 +227,14 @@ class MainActivity : AppCompatActivity() {
                     updateStatus("Error: ${e.javaClass.simpleName}")
                     Toast.makeText(this@MainActivity, "Error: ${e.message}", Toast.LENGTH_LONG).show()
                     currentBoxId?.let {
-                        HistoryManager.addHistoryEntry(this@MainActivity, it, false, "NETWORK_ERROR")
+                        HistoryManager.addHistoryEntryWithLocation(this@MainActivity, it, false, "NETWORK_ERROR")
                     }
                 }
             }
         }
     }
-    //Decoding and unzipping the token into the WAV file
+
+    // Decoding and unzipping the token into the WAV file
     private fun processZipToken(base64Data: String): File {
         val decodedBytes = Base64.decode(base64Data, Base64.DEFAULT)
 
@@ -243,14 +244,12 @@ class MainActivity : AppCompatActivity() {
         return extractWavFromZip(zipFile).also { zipFile.delete() }
     }
 
-    //Extracting the WAV from a zip archive
+    // Extracting the WAV from a zip archive
     private fun extractWavFromZip(zipFile: File): File {
         ZipInputStream(FileInputStream(zipFile)).use { zipInput ->
             var entry = zipInput.nextEntry
             while (entry != null) {
-                // Looking for WAV file in the ZIP
                 if (!entry.isDirectory && entry.name.lowercase().endsWith(".wav")) {
-                    // Creating output WAV file
                     val wavFile = File.createTempFile("extracted_token", ".wav", cacheDir)
                     FileOutputStream(wavFile).use { output ->
                         zipInput.copyTo(output)
@@ -264,14 +263,12 @@ class MainActivity : AppCompatActivity() {
         throw IOException("No WAV file found in ZIP")
     }
 
-    //Play WAV using a MediaPlayer
+    // Play WAV using a MediaPlayer
     private fun playWav(file: File) {
         try {
-            // Release any existing MediaPlayer
             mediaPlayer?.release()
             mediaPlayer = null
 
-            // Create new MediaPlayer
             mediaPlayer = MediaPlayer().apply {
                 setDataSource(file.absolutePath)
                 setAudioAttributes(
@@ -282,18 +279,14 @@ class MainActivity : AppCompatActivity() {
                         .build()
                 )
                 setVolume(1.0f, 1.0f)
-
                 prepare()
                 start()
             }
 
-            // Handle completion
             mediaPlayer?.setOnCompletionListener {
                 Log.d(TAG, "Playback finished")
                 updateStatus("Token playback completed")
-
                 showBoxOpeningResultDialog()
-
                 it.release()
                 mediaPlayer = null
                 file.delete()
@@ -307,7 +300,7 @@ class MainActivity : AppCompatActivity() {
                 file.delete()
 
                 currentBoxId?.let {
-                    HistoryManager.addHistoryEntry(this@MainActivity, it, false, "PLAYBACK_ERROR")
+                    HistoryManager.addHistoryEntryWithLocation(this@MainActivity, it, false, "PLAYBACK_ERROR")
                 }
                 true
             }
@@ -318,7 +311,7 @@ class MainActivity : AppCompatActivity() {
                 updateStatus("Playback error")
                 Toast.makeText(this@MainActivity, "Playback error: ${e.message}", Toast.LENGTH_LONG).show()
                 currentBoxId?.let {
-                    HistoryManager.addHistoryEntry(this@MainActivity, it, false, "PLAYBACK_ERROR")
+                    HistoryManager.addHistoryEntryWithLocation(this@MainActivity, it, false, "PLAYBACK_ERROR")
                 }
             }
             file.delete()
@@ -334,17 +327,19 @@ class MainActivity : AppCompatActivity() {
                 .setMessage("Did you successfully open the box?")
                 .setPositiveButton("Yes, it opened!") { _, _ ->
                     currentBoxId?.let {
-                        HistoryManager.addHistoryEntry(this@MainActivity, it, true, "QR_SCAN")
+                        HistoryManager.addHistoryEntryWithLocation(this@MainActivity, it, true, "QR_SCAN") {
+                            updateStatus("Box opened successfully!")
+                            Toast.makeText(this@MainActivity, "Success recorded in history", Toast.LENGTH_SHORT).show()
+                        }
                     }
-                    updateStatus("Box opened successfully!")
-                    Toast.makeText(this@MainActivity, "Success recorded in history", Toast.LENGTH_SHORT).show()
                 }
                 .setNegativeButton("No, it didn't open") { _, _ ->
                     currentBoxId?.let {
-                        HistoryManager.addHistoryEntry(this@MainActivity, it, false, "USER_REPORTED_FAILURE")
+                        HistoryManager.addHistoryEntryWithLocation(this@MainActivity, it, false, "USER_REPORTED_FAILURE") {
+                            updateStatus("Box opening failed")
+                            Toast.makeText(this@MainActivity, "Failure recorded in history", Toast.LENGTH_SHORT).show()
+                        }
                     }
-                    updateStatus("Box opening failed")
-                    Toast.makeText(this@MainActivity, "Failure recorded in history", Toast.LENGTH_SHORT).show()
                 }
                 .setCancelable(false)
                 .show()
