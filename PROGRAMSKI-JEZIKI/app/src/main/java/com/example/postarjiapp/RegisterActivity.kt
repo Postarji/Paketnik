@@ -34,19 +34,16 @@ class RegisterActivity : AppCompatActivity() {
                 val request = RegisterRequest(username, email, password)
 
                 ApiClient.instance.register(request).enqueue(object : retrofit2.Callback<UserResponse> {
-                    override fun onResponse(
-                        call: retrofit2.Call<UserResponse>,
-                        response: retrofit2.Response<UserResponse>
-                    ) {
+                    override fun onResponse(call: retrofit2.Call<UserResponse>, response: retrofit2.Response<UserResponse>) {
                         if (response.isSuccessful && response.body() != null) {
-                            Toast.makeText(this@RegisterActivity, "Registration successful", Toast.LENGTH_SHORT).show()
+                            val userResponse = response.body()!!
+                            Toast.makeText(this@RegisterActivity, "Welcome ${userResponse.username}!", Toast.LENGTH_SHORT).show()
 
-                            // Optionally return to LoginActivity
                             val intent = Intent(this@RegisterActivity, LoginActivity::class.java)
                             startActivity(intent)
                             finish()
                         } else {
-                            Toast.makeText(this@RegisterActivity, "Registration failed", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this@RegisterActivity, "Registration failed: ${response.message()}", Toast.LENGTH_SHORT).show()
                         }
                     }
 

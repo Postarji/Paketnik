@@ -11,8 +11,7 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface ApiService {
-    // Your existing login method
-    @POST("login") // or whatever your login endpoint is
+    @POST("login")
     fun login(@Body request: LoginRequest): Call<UserResponse>
 
     // New 2FA endpoints
