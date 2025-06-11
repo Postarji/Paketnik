@@ -93,10 +93,21 @@ function Profile() {
             });
             
             console.log('Response status:', response.status);
-            
-            if (response.ok) {
+              if (response.ok) {
                 const availableBoxesData = await response.json();
                 console.log('Available boxes data:', availableBoxesData);
+                // Log current books data structure for debugging
+                availableBoxesData.forEach((box, index) => {
+                    console.log(`Box ${index + 1} (${box.name}):`, box);
+                    if (box.currentBooks && box.currentBooks.length > 0) {
+                        console.log('Current books:', box.currentBooks);
+                        box.currentBooks.forEach((book, bookIndex) => {
+                            console.log(`  Book ${bookIndex + 1}:`, book);
+                            console.log(`    postId:`, book.postId);
+                            console.log(`    name:`, book.postId?.name);
+                        });
+                    }
+                });
                 setAvailableBoxes(availableBoxesData);
                 setShowBoxSelection(true);
             } else {

@@ -32,11 +32,10 @@ module.exports = {    // List all boxes for current user (owned, allowed, or adm
                         { allowedUsers: req.session.userId }
                     ]
                 };
-            }
-
-            Box.find(query)
+            }            Box.find(query)
             .populate('owner', 'username role')
             .populate('allowedUsers', 'username')
+            .populate('currentBooks.postId', 'name message path postedBy')
             .exec(function(err, boxes) {
                 if (err) {
                     return res.status(500).json({
@@ -50,6 +49,7 @@ module.exports = {    // List all boxes for current user (owned, allowed, or adm
                     Box.find({})
                     .populate('owner', 'username role')
                     .populate('allowedUsers', 'username')
+                    .populate('currentBooks.postId', 'name message path postedBy')
                     .exec(function(err, allBoxes) {
                         if (err) {
                             return res.json(boxes); // Return what we have if error
@@ -73,9 +73,7 @@ module.exports = {    // List all boxes for current user (owned, allowed, or adm
     show: function(req, res) {
         if (!req.session.userId) {
             return res.status(401).json({ message: 'Not logged in' });
-        }
-
-        // First try to find the box with user access
+        }        // First try to find the box with user access
         Box.findOne({
             _id: req.params.id,
             $or: [
@@ -85,6 +83,7 @@ module.exports = {    // List all boxes for current user (owned, allowed, or adm
         })
         .populate('owner', 'username role')
         .populate('allowedUsers', 'username')
+        .populate('currentBooks.postId', 'name message path postedBy')
         .exec(function(err, box) {
             if (err) {
                 return res.status(500).json({
@@ -101,6 +100,7 @@ module.exports = {    // List all boxes for current user (owned, allowed, or adm
             Box.findById(req.params.id)
             .populate('owner', 'username role')
             .populate('allowedUsers', 'username')
+            .populate('currentBooks.postId', 'name message path postedBy')
             .exec(function(err, adminBox) {
                 if (err) {
                     return res.status(500).json({
