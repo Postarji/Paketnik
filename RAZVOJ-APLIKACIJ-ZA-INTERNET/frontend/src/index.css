@@ -1484,7 +1484,7 @@ video {
 /* Enhanced Modal Footer */
 .modal-footer {
   background-color: #f8f9fa !important;
-  border-top: 1px solid #e9ecef !important;
+  border-top: 1px solid #dee2e6 !important;
   padding: 1.5rem 2rem !important;
   justify-content: space-between !important;
 }
@@ -1570,346 +1570,198 @@ video {
 }
 
 /* ============================================
-   RESPONSIVE ENHANCEMENTS
+   POST SELECTION AND BOX MANAGEMENT STYLES
    ============================================ */
 
-@media (max-width: 768px) {
-  .fade-in .form-container {
-    padding: 2rem 1.5rem;
-    margin: 1rem;
-  }
-  
-  .modal-body video {
-    width: 280px !important;
-    height: 210px !important;
-  }
-  
-  .modal-header,
-  .modal-footer {
-    padding: 1rem !important;
-  }
-  
-  .btn-outline-primary,
-  .btn-outline-success,
-  .btn-outline-warning {
-    padding: 10px 16px !important;
-    font-size: 0.95rem !important;
-  }
+/* Post Selection Checkboxes */
+.card.border-primary {
+  border-width: 3px !important;
+  box-shadow: 0 4px 15px rgba(76, 102, 43, 0.2) !important;
 }
 
-@media (max-width: 480px) {
-  .modal-body video {
-    width: 260px !important;
-    height: 195px !important;
-  }
-  
-  .fade-in .form-container {
-    padding: 1.5rem 1rem;
-  }
-  
-  .btn-outline-primary,
-  .btn-outline-success,
-  .btn-outline-warning {
-    padding: 8px 12px !important;
-    font-size: 0.9rem !important;
-  }
-}
-
-/* ============================================
-   PROFILE MY BOXES SECTION STYLING
-   ============================================ */
-
-/* Profile Boxes Grid Enhancement */
-.boxes-grid {
-  margin-top: 0 !important;
-  padding: 0 !important;
-}
-
-.boxes-grid .row {
-  margin: 0 !important;
-}
-
-.boxes-grid .col {
-  padding: 0.75rem !important;
-}
-
-/* Profile Box Cards Specific Styling */
-.boxes-grid .card {
-  border: 2px solid rgba(76, 102, 43, 0.1) !important;
-  border-radius: 12px !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
-  transition: all 0.3s ease !important;
-  height: 100% !important;
-  overflow: hidden !important;
-  background-color: var(--surface-color) !important;
-}
-
-.boxes-grid .card:hover {
-  transform: translateY(-4px) !important;
-  box-shadow: 0 8px 25px rgba(76, 102, 43, 0.15) !important;
-  border-color: rgba(76, 102, 43, 0.3) !important;
-}
-
-.boxes-grid .card-body {
-  padding: 1.5rem !important;
-  flex-grow: 1 !important;
-  display: flex !important;
-  flex-direction: column !important;
-}
-
-.boxes-grid .card-title {
-  color: var(--primary-color) !important;
-  font-weight: 600 !important;
-  font-size: 1.25rem !important;
-  margin-bottom: 1rem !important;
-  border-bottom: 2px solid var(--primary-color) !important;
-  padding-bottom: 0.5rem !important;
-  display: inline-block !important;
-}
-
-.boxes-grid .card-text {
-  margin-bottom: 0.75rem !important;
-  flex-grow: 1 !important;
-}
-
-.boxes-grid .card-text small {
-  font-size: 0.9rem !important;
-  line-height: 1.5 !important;
-  color: var(--muted-text-color) !important;
-  display: block !important;
-  padding: 0.25rem 0 !important;
-}
-
-.boxes-grid .card-text small:before {
-  content: "📍 " !important;
-  margin-right: 0.5rem !important;
-}
-
-.boxes-grid .card-text:last-of-type small:before {
-  content: "👥 " !important;
-  margin-right: 0.5rem !important;
-}
-
-/* Box Card Footer Enhancement */
-.boxes-grid .card-footer {
-  background-color: rgba(76, 102, 43, 0.05) !important;
-  border-top: 1px solid rgba(76, 102, 43, 0.1) !important;
-  padding: 1rem 1.5rem !important;
-  margin-top: auto !important;
-}
-
-.boxes-grid .card-footer .d-flex {
-  gap: 0.75rem !important;
-  flex-wrap: nowrap !important;
-}
-
-.boxes-grid .btn-outline-primary {
-  color: var(--primary-color) !important;
-  border-color: var(--primary-color) !important;
-  font-size: 0.875rem !important;
-  padding: 0.5rem 1rem !important;
-  font-weight: 500 !important;
-  border-radius: 6px !important;
-  transition: all 0.2s ease !important;
-  white-space: nowrap !important;
-  min-width: auto !important;
-  flex-shrink: 0 !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-}
-
-.boxes-grid .btn-outline-primary:hover {
+.form-check-input:checked {
   background-color: var(--primary-color) !important;
   border-color: var(--primary-color) !important;
-  color: white !important;
-  transform: translateY(-1px) !important;
-  box-shadow: 0 4px 8px rgba(76, 102, 43, 0.3) !important;
 }
 
-.boxes-grid .btn-outline-secondary {
-  color: var(--secondary-color) !important;
-  border-color: var(--secondary-color) !important;
-  font-size: 0.875rem !important;
-  padding: 0.5rem 1rem !important;
-  font-weight: 500 !important;
-  border-radius: 6px !important;
-  transition: all 0.2s ease !important;
-  white-space: nowrap !important;
-  min-width: auto !important;
-  flex-shrink: 0 !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-}
-
-.boxes-grid .btn-outline-secondary:hover {
-  background-color: var(--secondary-color) !important;
-  border-color: var(--secondary-color) !important;
-  color: white !important;
-  transform: translateY(-1px) !important;
-  box-shadow: 0 4px 8px rgba(88, 98, 73, 0.3) !important;
-}
-
-/* Empty State for Boxes */
-.boxes-grid .text-center {
-  padding: 3rem 2rem !important;
-  background-color: var(--background-color) !important;
-  border-radius: 12px !important;
-  border: 2px dashed rgba(76, 102, 43, 0.3) !important;
-  margin: 1rem 0 !important;
-}
-
-.boxes-grid .text-center p {
-  font-size: 1.1rem !important;
-  color: var(--muted-text-color) !important;
-  margin-bottom: 1.5rem !important;
-}
-
-.boxes-grid .text-center .btn-primary {
-  background-color: var(--primary-color) !important;
+.form-check-input:focus {
   border-color: var(--primary-color) !important;
-  padding: 0.75rem 2rem !important;
-  font-weight: 600 !important;
-  border-radius: 8px !important;
-  transition: all 0.3s ease !important;
+  box-shadow: 0 0 0 0.25rem rgba(76, 102, 43, 0.25) !important;
 }
 
-.boxes-grid .text-center .btn-primary:hover {
-  background-color: var(--primary-hover-color) !important;
-  border-color: var(--primary-hover-color) !important;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 6px 20px rgba(76, 102, 43, 0.4) !important;
-}
-
-/* Responsive Adjustments for Profile Boxes */
-@media (max-width: 768px) {
-  .boxes-grid .card-body {
-    padding: 1.25rem !important;
-  }
-  
-  .boxes-grid .card-footer {
-    padding: 1rem !important;
-  }
-  
-  .boxes-grid .d-flex {
-    flex-direction: row !important;
-    gap: 0.5rem !important;
-    flex-wrap: wrap !important;
-  }
-  
-  .boxes-grid .btn-outline-primary,
-  .boxes-grid .btn-outline-secondary {
-    flex: 1 !important;
-    min-width: 0 !important;
-    white-space: nowrap !important;
-  }
-}
-
-@media (max-width: 480px) {
-  .boxes-grid .col {
-    padding: 0.5rem !important;
-  }
-  
-  .boxes-grid .card-body {
-    padding: 1rem !important;
-  }
-  
-  .boxes-grid .card-title {
-    font-size: 1.1rem !important;
-  }
-  
-  .boxes-grid .text-center {
-    padding: 2rem 1rem !important;
-  }
-  
-  .boxes-grid .d-flex {
-    flex-direction: column !important;
-    gap: 0.5rem !important;
-  }
-  
-  .boxes-grid .btn-outline-primary,
-  .boxes-grid .btn-outline-secondary {
-    width: 100% !important;
-    justify-content: center !important;
-    flex: none !important;
-  }
-}
-
-/* ============================================
-   BUTTON TEXT VERTICAL FIX
-   ============================================ */
-
-/* Fix for vertical text in buttons - apply globally to all small buttons */
-.btn-sm,
-.btn-outline-primary.btn-sm,
-.btn-outline-secondary.btn-sm {
-  white-space: nowrap !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  text-align: center !important;
-  flex-direction: row !important;
-  writing-mode: initial !important;
-  text-orientation: initial !important;
-  min-width: auto !important;
-  max-width: none !important;
-  overflow: visible !important;
-}
-
-.btn-sm i {
-  display: inline !important;
-  width: auto !important;
-  height: auto !important;
-  line-height: normal !important;
-}
-
-/* Specific fix for box card buttons */
-.box-card .btn-sm,
-.card-footer .btn-sm,
-.boxes-grid .btn-sm {
-  white-space: nowrap !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  flex-direction: row !important;
-  writing-mode: horizontal-tb !important;
-  text-orientation: mixed !important;
-  word-break: keep-all !important;
-  hyphens: none !important;
-}
-
-/* ============================================
-   TAB CONTENT SPACING
-   ============================================ */
-
-/* Ensure proper spacing between tabs and content */
-.card-header-tabs .nav-link {
-  padding: 1rem 1.5rem !important;
-  font-weight: 500 !important;
-  color: var(--muted-text-color) !important;
-  border: none !important;
-  border-radius: 8px 8px 0 0 !important;
-  transition: all 0.2s ease !important;
-}
-
-.card-header-tabs .nav-link.active {
-  background-color: var(--primary-color) !important;
-  color: white !important;
-  border: none !important;
-}
-
-.card-header-tabs .nav-link:hover:not(.active) {
+/* Selection Alert Bar */
+.alert-info {
   background-color: rgba(76, 102, 43, 0.1) !important;
+  border-color: var(--primary-color) !important;
+  color: var(--primary-color) !important;
+  border-left: 4px solid var(--primary-color) !important;
+}
+
+/* Box Status Indicators */
+.card-header {
+  background-color: rgba(76, 102, 43, 0.05) !important;
+  border-bottom: 2px solid rgba(76, 102, 43, 0.1) !important;
+  font-weight: 600 !important;
+}
+
+/* Box Capacity Badges */
+.badge.bg-secondary {
+  background-color: var(--secondary-color) !important;
+  font-weight: 600 !important;
+}
+
+.badge.bg-success {
+  background-color: var(--primary-color) !important;
+}
+
+.badge.bg-danger {
+  background-color: #dc3545 !important;
+}
+
+/* Current Books Display */
+.badge.bg-light {
+  background-color: #f8f9fa !important;
+  color: var(--text-color) !important;
+  border: 1px solid #dee2e6 !important;
+  font-weight: 500 !important;
+}
+
+/* Box Selection Modal Enhancements */
+.modal-lg {
+  max-width: 900px !important;
+}
+
+.modal-header {
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-hover-color)) !important;
+  color: white !important;
+  border-bottom: none !important;
+}
+
+.modal-header .btn-close {
+  filter: invert(1) !important;
+}
+
+/* Box Cards in Modal */
+.card.border-success {
+  border-color: var(--primary-color) !important;
+  border-width: 2px !important;
+}
+
+.card.border-danger {
+  border-color: #dc3545 !important;
+  border-width: 2px !important;
+}
+
+/* Alert Enhancements for Modal */
+.alert-sm {
+  padding: 0.5rem !important;
+  margin-bottom: 0.5rem !important;
+  font-size: 0.875rem !important;
+}
+
+.alert-warning {
+  background-color: #fff3cd !important;
+  border-color: #ffeaa7 !important;
+  color: #856404 !important;
+}
+
+.alert-danger {
+  background-color: #f8d7da !important;
+  border-color: #f5c2c7 !important;
+  color: #842029 !important;
+}
+
+/* Status Icons */
+.bi-check-circle {
   color: var(--primary-color) !important;
 }
 
-/* Card body spacing for both tabs */
-.card-body {
-  padding: 2rem !important;
+.bi-archive {
+  color: #f39c12 !important;
 }
 
-/* Posts grid specific spacing */
-.card-body .row.row-cols-1.row-cols-md-2.g-4:first-child {
-  margin-top: 0 !important;
+.bi-tools {
+  color: #dc3545 !important;
+}
+
+/* Button Enhancements */
+.btn-success:disabled {
+  background-color: #6c757d !important;
+  border-color: #6c757d !important;
+  opacity: 0.65 !important;
+}
+
+/* Post Card Enhancements with Selection */
+.card.position-relative:hover .form-check-input {
+  transform: scale(1.1);
+  transition: transform 0.2s ease;
+}
+
+.card.border-primary .card-img-top {
+  border-bottom: 3px solid var(--primary-color);
+}
+
+/* Mobile Responsiveness for Box Selection */
+@media (max-width: 768px) {
+  .modal-lg {
+    max-width: 95% !important;
+    margin: 0.5rem !important;
+  }
+  
+  .modal-body .row .col-md-6 {
+    width: 100% !important;
+  }
+  
+  .alert.d-flex {
+    flex-direction: column !important;
+    gap: 1rem !important;
+    text-align: center !important;
+  }
+  
+  .alert .btn {
+    width: 100% !important;
+  }
+}
+
+/* Animation for Selected Cards */
+@keyframes selectedPulse {
+  0% {
+    box-shadow: 0 4px 15px rgba(76, 102, 43, 0.2);
+  }
+  50% {
+    box-shadow: 0 6px 25px rgba(76, 102, 43, 0.4);
+  }
+  100% {
+    box-shadow: 0 4px 15px rgba(76, 102, 43, 0.2);
+  }
+}
+
+.card.border-primary {
+  animation: selectedPulse 2s infinite;
+}
+
+/* Checkbox Container Styling */
+.position-absolute.top-0.start-0 {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 0 0 8px 0;
+  backdrop-filter: blur(10px);
+}
+
+/* Enhanced Book Badges */
+.badge.bg-light.text-dark {
+  font-size: 0.75em !important;
+  padding: 0.35em 0.65em !important;
+  margin: 0.1rem !important;
+  border-radius: 12px !important;
+  font-weight: 500 !important;
+  max-width: 100px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+/* Enhanced Modal Footer */
+.modal-footer {
+  border-top: 1px solid #dee2e6 !important;
+  background-color: #f8f9fa !important;
 }

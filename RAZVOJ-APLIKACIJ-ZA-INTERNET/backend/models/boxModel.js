@@ -13,6 +13,25 @@ var boxSchema = new Schema({
         ref: 'user'
     }],
     'location': String,
+    'status': {
+        type: String,
+        enum: ['available', 'occupied', 'maintenance'],
+        default: 'available'
+    },
+    'currentBooks': [{
+        postId: {
+            type: Schema.Types.ObjectId,
+            ref: 'photo'
+        },
+        addedAt: {
+            type: Date,
+            default: Date.now
+        }
+    }],
+    'capacity': {
+        type: Number,
+        default: 5
+    },
     'createdAt': {
         type: Date,
         default: Date.now

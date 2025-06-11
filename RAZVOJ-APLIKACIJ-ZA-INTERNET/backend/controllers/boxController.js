@@ -347,8 +347,7 @@ module.exports = {    // List all boxes for current user (owned, allowed, or adm
                 UnlockEvent.find({
                     box: req.params.id
                 })
-                .populate('user', 'username')
-                .sort('-timestamp')
+                .populate('user', 'username')                .sort('-timestamp')
                 .exec(function(err, events) {
                     if (err) {
                         return res.status(500).json({
@@ -359,6 +358,190 @@ module.exports = {    // List all boxes for current user (owned, allowed, or adm
                     return res.json(events);
                 });
             }
+        });
+    },
+
+    // Add books to box
+    addBooksToBox: function(req, res) {
+        if (!req.session.userId) {
+            return res.status(401).json({ message: 'Not logged in' });
+        }
+
+        const { postIds } = req.body;
+        
+        if (!postIds || !Array.isArray(postIds) || postIds.length === 0) {
+            return res.status(400).json({ message: 'Post IDs are required' });
+        }
+
+        // Check if user has access to the box
+        Box.findOne({
+            _id: req.params.id,
+            $or: [
+                { owner: req.session.userId },
+                { allowedUsers: req.session.userId }
+            ]
+        })
+        .exec(function(err, box) {
+            if (err) {
+                return res.status(500).json({
+                    message: 'Error finding box',
+                    error: err
+                });
+            }
+            
+            if (!box) {
+                return res.status(404).json({
+                    message: 'Box not found or access denied'
+                });
+            }
+
+            // Check if box is available
+            if (box.status !== 'available') {
+                return res.status(400).json({
+                    message: 'Box is not available'
+                });
+            }
+
+            // Check capacity
+            const currentBookCount = box.currentBooks ? box.currentBooks.length : 0;
+            const newBookCount = currentBookCount + postIds.length;
+            
+            if (newBookCount > box.capacity) {
+                return res.status(400).json({
+                    message: `Box capacity exceeded. Available space: ${box.capacity - currentBookCount}`
+                });
+            }
+
+            // Add books to the box
+            const booksToAdd = postIds.map(postId => ({
+                postId: postId,
+                addedAt: new Date()
+            }));
+
+            if (!box.currentBooks) {
+                box.currentBooks = [];
+            }
+
+            box.currentBooks.push(...booksToAdd);
+            
+            // Update status if box is now full
+            if (box.currentBooks.length >= box.capacity) {
+                box.status = 'occupied';
+            }
+
+            box.save(function(err, updatedBox) {
+                if (err) {
+                    return res.status(500).json({
+                        message: 'Error updating box',
+                        error: err
+                    });
+                }
+                
+                // Populate the current books with post details
+                Box.findById(updatedBox._id)
+                .populate('currentBooks.postId', 'name message path')
+                .exec(function(err, populatedBox) {
+                    if (err) {
+                        return res.json(updatedBox); // Return unpopulated if error
+                    }
+                    return res.json(populatedBox);
+                });
+            });
+        });
+    },
+
+    // Remove books from box
+    removeBooksFromBox: function(req, res) {
+        if (!req.session.userId) {
+            return res.status(401).json({ message: 'Not logged in' });
+        }
+
+        const { postIds } = req.body;
+        
+        if (!postIds || !Array.isArray(postIds) || postIds.length === 0) {
+            return res.status(400).json({ message: 'Post IDs are required' });
+        }
+
+        // Check if user has access to the box
+        Box.findOne({
+            _id: req.params.id,
+            $or: [
+                { owner: req.session.userId },
+                { allowedUsers: req.session.userId }
+            ]
+        })
+        .exec(function(err, box) {
+            if (err) {
+                return res.status(500).json({
+                    message: 'Error finding box',
+                    error: err
+                });
+            }
+            
+            if (!box) {
+                return res.status(404).json({
+                    message: 'Box not found or access denied'
+                });
+            }
+
+            // Remove books from the box
+            if (box.currentBooks) {
+                box.currentBooks = box.currentBooks.filter(book => 
+                    !postIds.includes(book.postId.toString())
+                );
+            }
+
+            // Update status if box is no longer full
+            if (box.currentBooks.length < box.capacity && box.status === 'occupied') {
+                box.status = 'available';
+            }
+
+            box.save(function(err, updatedBox) {
+                if (err) {
+                    return res.status(500).json({
+                        message: 'Error updating box',
+                        error: err
+                    });
+                }
+                
+                // Populate the current books with post details
+                Box.findById(updatedBox._id)
+                .populate('currentBooks.postId', 'name message path')
+                .exec(function(err, populatedBox) {
+                    if (err) {
+                        return res.json(updatedBox); // Return unpopulated if error
+                    }
+                    return res.json(populatedBox);
+                });
+            });
+        });
+    },
+
+    // Get available boxes for posts
+    getAvailableBoxes: function(req, res) {
+        if (!req.session.userId) {
+            return res.status(401).json({ message: 'Not logged in' });
+        }
+
+        // Find boxes that user has access to and are available
+        Box.find({
+            $or: [
+                { owner: req.session.userId },
+                { allowedUsers: req.session.userId }
+            ],
+            status: { $in: ['available', 'occupied'] } // Include occupied boxes so user can see current contents
+        })
+        .populate('owner', 'username role')
+        .populate('allowedUsers', 'username')
+        .populate('currentBooks.postId', 'name message path postedBy')
+        .exec(function(err, boxes) {
+            if (err) {
+                return res.status(500).json({
+                    message: 'Error retrieving boxes',
+                    error: err
+                });
+            }
+            return res.json(boxes);
         });
     }
 };
