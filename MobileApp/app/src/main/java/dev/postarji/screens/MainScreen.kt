@@ -36,6 +36,12 @@ fun MainScreen(navController: NavHostController) {
                     selected = currentRoute == "open",
                     onClick = { navController.navigate("open") },
                 )
+                NavigationBarItem(
+                    icon = { Icon(Icons.Default.Lock, contentDescription = null) },
+                    label = { Text("History") },
+                    selected = currentRoute == "history",
+                    onClick = { navController.navigate("history") },
+                )
             }
         }
     ) { innerPadding ->
