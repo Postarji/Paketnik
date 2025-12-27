@@ -2,6 +2,7 @@
 
 import java.util.Random
 
+// Basically custom dice roller - genereriramo random seed, da lahko dokažemo, da bo algoritem imel vedno enake rezultate
 object RandomUtils {
     private var random = Random()
 

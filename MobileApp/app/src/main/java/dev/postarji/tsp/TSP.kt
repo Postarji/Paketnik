@@ -3,19 +3,19 @@
 import android.content.Context
 import java.io.BufferedReader
 import java.io.InputStreamReader
-import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
+// Class prebere .tsp files in je naš "map manager"
 class TSP(private val context: Context) {
     var name: String = ""
-    var dimension: Int = 0
-    var edgeWeightType: String = ""
-    var edgeWeightFormat: String = ""
+    var dimension: Int = 0 // Število mest
+    var edgeWeightType: String = "" // Is it GPS coordinates (EUC_2D) or a distance table (EXPLICIT)?
+    var edgeWeightFormat: String = "" // If it's a table, is it a FULL_MATRIX?
 
     val cities = ArrayList<City>()
-    var weights: Array<DoubleArray>? = null // For EXPLICIT/FULL_MATRIX
+    var weights: Array<DoubleArray>? = null // This holds the distance table if we are using EXPLICIT mode
 
-    // Load data from assets (files must be in src/main/assets/)
+    [cite_start]// Opens a .tsp file from the assets folder and reads it line by line [cite: 18, 19]
     fun loadData(filename: String) {
         cities.clear()
         weights = null
@@ -25,14 +25,14 @@ class TSP(private val context: Context) {
             val reader = BufferedReader(InputStreamReader(inputStream))
 
             var line: String?
-            var section = "HEADER"
+            var section = "HEADER" // We start reading the top info section
 
             while (reader.readLine().also { line = it } != null) {
                 val cleanLine = line!!.trim()
-                if (cleanLine == "EOF") break
+                if (cleanLine == "EOF") break // Stop at End Of File
                 if (cleanLine.isEmpty()) continue
 
-                // Check for Section Headers
+                // Switch modes when we hit a section header
                 if (cleanLine == "NODE_COORD_SECTION") {
                     section = "NODES"
                     continue
@@ -42,13 +42,16 @@ class TSP(private val context: Context) {
                     continue
                 }
 
+                // Parse the Header info (Name, Type, Size)
                 if (section == "HEADER") {
                     if (cleanLine.startsWith("NAME")) name = cleanLine.split(":")[1].trim()
                     if (cleanLine.startsWith("DIMENSION")) dimension = cleanLine.split(":")[1].trim().toInt()
                     if (cleanLine.startsWith("EDGE_WEIGHT_TYPE")) edgeWeightType = cleanLine.split(":")[1].trim()
                     if (cleanLine.startsWith("EDGE_WEIGHT_FORMAT")) edgeWeightFormat = cleanLine.split(":")[1].trim()
-                } else if (section == "NODES") {
-                    // Format: Index X Y
+                }
+                // Parse the City Coordinates (EUC_2D mode)
+                else if (section == "NODES") {
+                    // Line looks like: "1 25.0 10.0" (Index X Y)
                     val parts = cleanLine.split("\\s+".toRegex()).filter { it.isNotEmpty() }
                     if (parts.size >= 3) {
                         val index = parts[0].toInt()
@@ -56,26 +59,12 @@ class TSP(private val context: Context) {
                         val y = parts[2].toDouble()
                         cities.add(City(index, x, y))
                     }
-                } else if (section == "WEIGHTS") {
-                    // If we haven't initialized the matrix yet
-                    if (weights == null) {
-                        weights = Array(dimension) { DoubleArray(dimension) }
-                    }
-                    // Reading matrix data is tricky because it can span multiple lines
-                    // For simplicity in this specific assignment context, let's assume standard TSPLIB format
-                    // But implementing a robust parser for the matrix usually requires reading all tokens continuously.
-                    // Let's defer complex matrix parsing to a specific helper if needed,
-                    // but usually, TSPLIB puts row by row.
-
-                    // NOTE: For the Android implementation, implementing a full streaming matrix parser
-                    // inside this loop is complex.
-                    // If 'bays29.tsp' is FULL_MATRIX, it lists numbers sequentially.
-                    // We will handle the matrix reading in a specialized way below if needed.
                 }
+                // Note: We skip reading weights here because matrix data is messy to read line-by-line.
+                // We handle it in 'loadMatrixData' below.
             }
 
-            // Special handling for Matrix files if the loop above didn't catch it nicely
-            // (Re-opening stream or using a token scanner is often easier for Matrix)
+            // If this is a Matrix file (table of distances), use the special reader
             if (edgeWeightType == "EXPLICIT" && edgeWeightFormat == "FULL_MATRIX") {
                 loadMatrixData(filename)
             }
@@ -86,16 +75,16 @@ class TSP(private val context: Context) {
         }
     }
 
+    [cite_start]// Helper to read the big table of numbers for matrix problems (like bays29.tsp) [cite: 24]
     private fun loadMatrixData(filename: String) {
-        // robust tokenizer for the whole file to find EDGE_WEIGHT_SECTION
         val inputStream = context.assets.open(filename)
-        val scanner = java.util.Scanner(inputStream)
+        val scanner = java.util.Scanner(inputStream) // Scanner is better for reading numbers one by one
 
         var inWeights = false
         var count = 0
-        weights = Array(dimension) { DoubleArray(dimension) }
+        weights = Array(dimension) { DoubleArray(dimension) } // Create empty grid
 
-        // Mock cities for Matrix problems (since they don't have coords)
+        // Create fake cities because matrix files don't give coordinates, just IDs
         cities.clear()
         for (i in 1..dimension) {
             cities.add(City(i, 0.0, 0.0))
@@ -110,7 +99,7 @@ class TSP(private val context: Context) {
             if (token == "EOF") break
 
             if (inWeights) {
-                // Read the matrix linear values
+                // Read the next number and put it in the grid
                 try {
                     val value = token.toDouble()
                     val row = count / dimension
@@ -120,43 +109,39 @@ class TSP(private val context: Context) {
                     }
                     count++
                 } catch (e: NumberFormatException) {
-                    // Ignore non-numbers
+                    // Skip weird text that isn't a number
                 }
             }
         }
         scanner.close()
     }
 
-    // The Critical Method [cite: 16]
+    [cite_start]// Calculates the total length of a tour (Solution) [cite: 16]
     fun calculateDistance(tour: Tour): Double {
         var dist = 0.0
+        // Sum distance from city A -> B -> C...
         for (i in 0 until tour.cities.size - 1) {
             dist += getDistance(tour.cities[i], tour.cities[i+1])
         }
-        // Return to start
+        // Add distance from Last City -> First City (Closing the loop)
         dist += getDistance(tour.cities.last(), tour.cities.first())
 
         tour.distance = dist
         return dist
     }
 
+    // Gets the distance between two specific cities
     private fun getDistance(c1: City, c2: City): Double {
         return if (edgeWeightType == "EXPLICIT") {
-            // Usually indices in TSP files are 1-based, array is 0-based
+            // Case 1: Matrix mode. Just look up the value in the table.
             val i = c1.index - 1
             val j = c2.index - 1
             weights!![i][j]
         } else {
-            // EUC_2D [cite: 25]
+            // Case 2: Coordinate mode (EUC_2D). [cite_start]Calculate math distance. [cite: 25]
             val dx = c1.x - c2.x
             val dy = c1.y - c2.y
-            // TSPLIB standard usually rounds to nearest integer,
-            // but the instructions say "evklidska razdalja" (Euclidean).
-            // Standard TSPLIB EUC_2D is: nint(sqrt(x*x + y*y))
-            // Let's stick to pure Double for now unless nint is strictly required by the PDF validators.
-            // PDF [cite: 265-268] says nint(sqrt(...)). Let's use that to be safe for benchmarks.
-            val d = sqrt(dx * dx + dy * dy)
-            d // or d.roundToInt().toDouble() if you want strict TSPLIB compliance
+            sqrt(dx * dx + dy * dy)
         }
     }
 }

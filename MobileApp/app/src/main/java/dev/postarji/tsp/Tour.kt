@@ -2,19 +2,20 @@
 
 import java.util.Collections
 
+// Seznam mest v določenem vrstmen redu (npr. 1 -> 5 -> 3 -> 2 -> 4 (te številke so "Index" v City.kt objektu))
 class Tour {
     val cities: ArrayList<City> = ArrayList()
     var distance: Double = 0.0
 
-    // Create an empty tour
+    // Default konstruktor
     constructor()
 
-    // Create a tour from a list of cities
+    // Konstruktor iz seznama mest
     constructor(cities: List<City>) {
         this.cities.addAll(cities)
     }
 
-    // Copy constructor (crucial for genetic algorithms)
+    // Kopirni konstruktor
     constructor(other: Tour) {
         this.cities.addAll(other.cities)
         this.distance = other.distance
@@ -24,8 +25,8 @@ class Tour {
     fun generateIndividual(allCities: List<City>) {
         cities.clear()
         cities.addAll(allCities)
-        // Shuffle using our reproducible RandomUtils
-        // We implement a custom shuffle to use our RandomUtils
+        // Shuffle uporabe reproducible RandomUtils
+        // Implementiramo custom shuffle, ki uporablja RandomUtils
         for (i in cities.indices.reversed()) {
             val j = RandomUtils.nextInt(i + 1)
             val temp = cities[i]
@@ -33,9 +34,6 @@ class Tour {
             cities[j] = temp
         }
     }
-
-    // We will implement calculateDistance logic in the TSP class or here.
-    // Usually, the TSP class holds the weights, so we might just store the value here.
 
     override fun toString(): String {
         return cities.joinToString(" -> ") { it.index.toString() }
