@@ -2,7 +2,6 @@
 
 import java.util.Random
 
-// Basically custom dice roller - genereriramo random seed, da lahko dokažemo, da bo algoritem imel vedno enake rezultate
 object RandomUtils {
     private var random = Random()
 
@@ -22,7 +21,6 @@ object RandomUtils {
         return random.nextDouble()
     }
 
-    // Helper for probability checks
     fun checkProbability(probability: Double): Boolean {
         return random.nextDouble() < probability
     }

@@ -16,7 +16,6 @@ class BenchmarkRunner(private val context: Context) {
         "dca1389.tsp"
     )
 
-    // REPLACE "TeamName" WITH YOUR ACTUAL TEAM NAME (e.g., "Postarji")
     private val teamName = "Postarji"
 
     fun runAllBenchmarks() {
@@ -30,7 +29,6 @@ class BenchmarkRunner(private val context: Context) {
     private fun runSingleBenchmark(filename: String) {
         Log.d("Benchmark", "Starting benchmark for $filename...")
 
-        // Setup the TSP
         val tsp = TSP(context)
         tsp.loadData(filename)
 
@@ -38,15 +36,12 @@ class BenchmarkRunner(private val context: Context) {
         val results = ArrayList<Double>()
         var bestTourEver: Tour? = null
 
-        [cite_start]// Run 30 times [cite: 37]
         for (i in 0 until 30) {
-            // We set a random seed for each run so we get different results!
             RandomUtils.setSeedFromTime()
 
             val bestTour = ga.run()
             results.add(bestTour.distance)
 
-            // Keep track of the absolute best tour found across all runs
             if (bestTourEver == null || bestTour.distance < bestTourEver!!.distance) {
                 bestTourEver = bestTour
             }
@@ -54,14 +49,10 @@ class BenchmarkRunner(private val context: Context) {
             Log.d("Benchmark", "Run $i for $filename: ${bestTour.distance}")
         }
 
-        [cite_start]// Save results to file [cite: 50, 51]
         saveResultsToFile(filename, results, bestTourEver)
     }
 
     private fun saveResultsToFile(originalFilename: String, results: List<Double>, bestTour: Tour?) {
-        [cite_start]// Output format: TeamName_filename.txt [cite: 51]
-        // Example: Postarji_bays29.txt
-        // We remove the ".tsp" extension for the output name
         val nameWithoutExt = originalFilename.replace(".tsp", "")
         val outputName = "${teamName}_${nameWithoutExt}.txt"
 
@@ -92,7 +83,6 @@ class BenchmarkRunner(private val context: Context) {
             sb.append(bestTour.toString())
         }
 
-        // Save to internal app storage
         try {
             val file = File(context.filesDir, outputName)
             val fos = FileOutputStream(file)

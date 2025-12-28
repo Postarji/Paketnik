@@ -18,6 +18,14 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        // --- DOMEN TEMP CODE START ---
+        // Samo 1x run, da naredimo txt files za algoritme
+        /*
+        val runner = dev.postarji.tsp.BenchmarkRunner(this)
+        runner.runAllBenchmarks()
+        */
+
         setContent {
             PostarjiTheme {
                 App()
