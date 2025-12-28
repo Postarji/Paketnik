@@ -16,18 +16,37 @@ import dev.postarji.ui.theme.PostarjiTheme
 
 import org.osmdroid.config.Configuration
 import android.content.Context
+import android.util.Log
+import androidx.lifecycle.lifecycleScope
+import dev.postarji.data.LocationProvider
+import dev.postarji.tsp.TSP
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // --- OSMDROID KONFIGURACIJA ---
-        Configuration.getInstance().load(
-            this,
-            getSharedPreferences("osm_pref", Context.MODE_PRIVATE)
-        )
-        // Nastavimo userAgentValue, da se identificiramo na OSM strežnikih.
+        Configuration.getInstance().load(this, getSharedPreferences("osm_pref", Context.MODE_PRIVATE))
         Configuration.getInstance().userAgentValue = "PametniPaketnik_v1"
         enableEdgeToEdge()
+
+        lifecycleScope.launch {
+            val provider = LocationProvider(this@MainActivity)
+
+            val realProblem = withContext(Dispatchers.IO) {
+                provider.createRealWorldTSP(useTimeOptimization = false)
+            }
+
+            Log.d("TSP_STATUS", "Problem pripravljen! Število mest: ${realProblem.dimension}")
+        }
+
+        /*lifecycleScope.launch {
+            val provider = LocationProvider(this@MainActivity)
+            val realProblem = provider.createRealWorldTSP(useTimeOptimization = false)
+
+            Log.d("TSP_STATUS", "Uspešno naloženih ${realProblem.dimension} lokacij.")
+        }*/
 
         // --- DOMEN TEMP CODE START ---
         // Samo 1x run, da naredimo txt files za algoritme
@@ -42,6 +61,7 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
 }
 @Composable
 @Preview(showSystemUi = true, showBackground = true)
