@@ -14,9 +14,19 @@ import androidx.navigation.compose.rememberNavController
 import dev.postarji.screens.MainScreen
 import dev.postarji.ui.theme.PostarjiTheme
 
+import org.osmdroid.config.Configuration
+import android.content.Context
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // --- OSMDROID KONFIGURACIJA ---
+        Configuration.getInstance().load(
+            this,
+            getSharedPreferences("osm_pref", Context.MODE_PRIVATE)
+        )
+        // Nastavimo userAgentValue, da se identificiramo na OSM strežnikih.
+        Configuration.getInstance().userAgentValue = "PametniPaketnik_v1"
         enableEdgeToEdge()
 
         // --- DOMEN TEMP CODE START ---
