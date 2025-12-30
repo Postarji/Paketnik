@@ -64,14 +64,17 @@ class LocationProvider(private val context: Context) {
                         val cityName = tokens[0].replace("\"", "").trim()
                         val address = tokens[1].replace("\"", "").trim()
                         val postCode = tokens[4].replace("\"", "").trim()
-                        val fullAddress = "$address, $postCode $cityName, Slovenia"
+                        val fullAddressForGeocoding = "$address, $postCode $cityName, Slovenia"
 
-                        val coords = getCoordinatesFromAddress(fullAddress)
+                        val coordinates = getCoordinatesFromAddress(fullAddressForGeocoding)
+
+                        val lat = coordinates?.latitude ?: 0.0
+                        val lon = coordinates?.longitude ?: 0.0
 
                         cities.add(City(
                             index = currentId++,
-                            x = coords?.longitude ?: 0.0,
-                            y = coords?.latitude ?: 0.0,
+                            x = lon,
+                            y = lat,
                             name = cityName,
                             address = address
                         ))
@@ -85,9 +88,9 @@ class LocationProvider(private val context: Context) {
     private fun getCoordinatesFromAddress(fullAddress: String): GeoPoint? {
         return try {
             val geocoder = Geocoder(context, Locale.getDefault())
-            val addresses = geocoder.getFromLocationName(fullAddress, 1)
-            if (!addresses.isNullOrEmpty()) {
-                GeoPoint(addresses[0].latitude, addresses[0].longitude)
+            val addressList = geocoder.getFromLocationName(fullAddress, 1)
+            if (!addressList.isNullOrEmpty()) {
+                GeoPoint(addressList[0].latitude, addressList[0].longitude)
             } else null
         } catch (e: Exception) { null }
     }
@@ -122,6 +125,9 @@ class LocationProvider(private val context: Context) {
                 Log.d("TSP_MATRIX", "Razdalja od ${cities[1].name} do ${cities[0].name}: ${distM[1][0]} metrov")
                 DistanceMatrixResult(distM, durM)
             }
-        } catch (e: Exception) { null }
+        } catch (e: Exception) {
+            Log.e("OSRM_ERROR", "Napaka pri klicu OSRM: ${e.message}")
+            return null
+        }
     }
 }
