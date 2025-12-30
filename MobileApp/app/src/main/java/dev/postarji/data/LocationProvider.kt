@@ -26,6 +26,11 @@ class LocationProvider(private val context: Context) {
         return cities.map { it.name }
     }
 
+    // 2. Metoda za Študenta 1 (pomoč pri začetni populaciji)
+    fun generateRandomTour(n: Int): List<Int> {
+        return (1..n).shuffled()
+    }
+
     suspend fun createRealWorldTSP(useTimeOptimization: Boolean): TSP = withContext(Dispatchers.IO) {
         val tsp = TSP(context)
 
