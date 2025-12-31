@@ -54,6 +54,21 @@ class MainActivity : ComponentActivity() {
         val runner = dev.postarji.tsp.BenchmarkRunner(this)
         runner.runAllBenchmarks()
         */
+        // -- DOMEN TEMP CODE END ---
+
+        // --- STUDENT 2 REAL WORLD DATA EXPERIMENT START ---
+        // Run this once to see logs, then verify it works
+        /*
+        lifecycleScope.launch {
+            try {
+                val runner = dev.postarji.tsp.RealWorldRunner(this@MainActivity)
+                runner.runExperiments()
+            } catch(e: Exception) {
+                android.util.Log.e("RealWorld", "Error", e)
+            }
+        }
+        */
+        // --- STUDENT 2 REAL WORLD DATA EXPERIMENT END ---
 
         setContent {
             PostarjiTheme {

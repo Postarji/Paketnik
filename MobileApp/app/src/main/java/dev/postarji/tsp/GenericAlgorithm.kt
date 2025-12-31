@@ -1,19 +1,19 @@
 ﻿package dev.postarji.tsp
 
-class GeneticAlgorithm(private val tsp: TSP) {
-
-    // Student 3: Create UI sliders/inputs to change these values before running the algorithm
-    private var populationSize = 100
-    private var mutationRate = 0.1
-    private var crossoverRate = 0.8
-    private var elitism = true
-    private var tournamentSize = 5
+// We add default values, but now we can override them when we create the class!
+class GeneticAlgorithm(
+    private val tsp: TSP,
+    var populationSize: Int = 100,
+    var mutationRate: Double = 0.1,
+    var crossoverRate: Double = 0.8,
+    var elitism: Boolean = true
+) {
 
     private var population = ArrayList<Tour>()
+    private var tournamentSize = 5
 
-    // Student 3: This function runs the whole thing. Call it from a background thread!
-    // It returns the final "Best Tour" that you need to draw.
     fun run(): Tour {
+        // 1. Initialize Population
         population.clear()
         for (i in 0 until populationSize) {
             val t = Tour()
@@ -23,8 +23,9 @@ class GeneticAlgorithm(private val tsp: TSP) {
         }
 
         var bestTour = population.minByOrNull { it.distance } ?: Tour()
-        var evaluations = populationSize
 
+        // Dynamic termination: 1000 evaluations per city (as per instructions)
+        var evaluations = populationSize
         val maxEvaluations = 1000 * tsp.dimension
 
         while (evaluations < maxEvaluations) {
@@ -58,12 +59,13 @@ class GeneticAlgorithm(private val tsp: TSP) {
 
             val currentBest = population.minByOrNull { it.distance }
             if (currentBest != null && currentBest.distance < bestTour.distance) {
-                bestTour = Tour(currentBest) // Save a copy
+                bestTour = Tour(currentBest)
             }
         }
 
         return bestTour
     }
+
     private fun tournamentSelection(): Tour {
         val tournament = ArrayList<Tour>()
         for (i in 0 until tournamentSize) {
