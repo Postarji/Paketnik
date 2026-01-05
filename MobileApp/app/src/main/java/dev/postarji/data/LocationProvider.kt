@@ -25,18 +25,18 @@ class LocationProvider(private val context: Context) {
     private val MAX_CITIES_TO_LOAD = 126
 
     // We fetch 10 rows at a time to stay under the free API limit per request
-    private val BATCH_SIZE = 10
+    private val BATCH_SIZE = 70
 
     fun getAllCityNames(): List<String> {
         val cities = loadCitiesFromCsv("direct4meLocations.csv")
         return cities.map { it.name }
     }
 
-    suspend fun createRealWorldTSP(useTimeOptimization: Boolean): TSP = withContext(Dispatchers.IO) {
+    suspend fun createRealWorldTSP(useTimeOptimization: Boolean, selectedCities: List<City>): TSP = withContext(Dispatchers.IO) {
         val tsp = TSP(context)
 
         // 1. Load ALL Cities
-        val allCities = loadCitiesFromCsv("direct4meLocations.csv")
+        val allCities = selectedCities
         tsp.cities.clear()
         tsp.cities.addAll(allCities)
 
@@ -129,7 +129,7 @@ class LocationProvider(private val context: Context) {
             }
 
             // Sleep slightly to be nice to the free server
-            Thread.sleep(100)
+//            Thread.sleep(100)
         }
 
         return DistanceMatrixResult(finalDistM, finalDurM)
@@ -170,6 +170,37 @@ class LocationProvider(private val context: Context) {
                 }
             }
         } catch (e: Exception) { e.printStackTrace() }
+        return cities
+    }
+
+    fun loadCitiesFromCsvCoords(fileName: String): List<City> {
+        val cities = mutableListOf<City>()
+        var currentId = 1
+
+        val csvRegex = ",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)".toRegex()
+
+        try {
+            context.assets.open(fileName).bufferedReader().useLines { lines ->
+                lines.drop(1).forEach { line ->
+                    val tokens = line.split(csvRegex)
+
+                    if (tokens.size >= 7) {
+                        val cityName = tokens[0].replace("\"", "").trim()
+                        val address = tokens[1].replace("\"", "").trim()
+
+                        val lat = tokens[5].toDoubleOrNull() ?: 0.0
+                        val lon = tokens[6].toDoubleOrNull() ?: 0.0
+
+                        if (lat != 0.0 && lon != 0.0) {
+                            cities.add(City(currentId++, lon, lat, cityName, address))
+                        }
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
         return cities
     }
 

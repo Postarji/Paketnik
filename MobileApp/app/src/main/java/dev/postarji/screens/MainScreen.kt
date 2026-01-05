@@ -2,6 +2,7 @@ package dev.postarji.screens
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -42,9 +43,15 @@ fun MainScreen(navController: NavHostController) {
                     selected = currentRoute == "history",
                     onClick = { navController.navigate("history") },
                 )
+                NavigationBarItem(
+                    icon = { Icon(Icons.Default.LocationOn, contentDescription = null) },
+                    label = { Text("Path Finder") },
+                    selected = currentRoute == "path",
+                    onClick = { navController.navigate("path") },
+                )
             }
         }
     ) { innerPadding ->
-        AppNavigation(navController)
+        AppNavigation(navController, padding = innerPadding)
     }
 }

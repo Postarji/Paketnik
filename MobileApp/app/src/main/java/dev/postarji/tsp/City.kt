@@ -5,7 +5,8 @@ data class City(
     val x: Double,
     val y: Double,
     val name: String = "",
-    val address: String = ""
+    val address: String = "",
+    val isSelected: Boolean = false,
 ) {
     fun distanceTo(other: City): Double {
         val dx = this.x - other.x

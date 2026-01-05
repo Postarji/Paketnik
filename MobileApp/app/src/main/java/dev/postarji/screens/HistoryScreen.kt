@@ -22,7 +22,6 @@ import java.util.Locale
 
 @Composable
 fun HistoryScreen(
-    navController: NavHostController,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current

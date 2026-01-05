@@ -16,7 +16,6 @@ import dev.postarji.R
 
 @Composable
 fun HomeScreen(
-    navController: NavHostController,
     modifier: Modifier = Modifier
 ) {
     Box(

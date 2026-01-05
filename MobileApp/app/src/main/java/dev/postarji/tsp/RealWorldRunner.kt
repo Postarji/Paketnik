@@ -13,7 +13,8 @@ class RealWorldRunner(private val context: Context) {
 
         val provider = LocationProvider(context)
         // Optimization: Set to 'true' if you want to minimize Time, 'false' for Distance
-        val tsp = provider.createRealWorldTSP(useTimeOptimization = false)
+        val allCities = provider.loadCitiesFromCsvCoords("direct4meLocations.csv")
+        val tsp = provider.createRealWorldTSP(useTimeOptimization = false, allCities)
 
         Log.d("RealWorld", "Loaded ${tsp.dimension} cities from Direct4Me list.")
 

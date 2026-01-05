@@ -31,15 +31,15 @@ class MainActivity : ComponentActivity() {
         Configuration.getInstance().userAgentValue = "PametniPaketnik_v1"
         enableEdgeToEdge()
 
-        lifecycleScope.launch {
-            val provider = LocationProvider(this@MainActivity)
-
-            val realProblem = withContext(Dispatchers.IO) {
-                provider.createRealWorldTSP(useTimeOptimization = false)
-            }
-
-            Log.d("TSP_STATUS", "Problem pripravljen! Število mest: ${realProblem.dimension}")
-        }
+//        lifecycleScope.launch {
+//            val provider = LocationProvider(this@MainActivity)
+//
+//            val realProblem = withContext(Dispatchers.IO) {
+//                provider.createRealWorldTSP(useTimeOptimization = false)
+//            }
+//
+//            Log.d("TSP_STATUS", "Problem pripravljen! Število mest: ${realProblem.dimension}")
+//        }
 
         /*lifecycleScope.launch {
             val provider = LocationProvider(this@MainActivity)

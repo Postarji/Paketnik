@@ -48,9 +48,11 @@ dependencies {
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
+    implementation("androidx.compose.material:material-icons-extended:1.7.8")
 
     // --- NAVIGATION (Downgraded from 2.9.6 which caused the error) ---
     implementation("androidx.navigation:navigation-compose:2.7.7")
+    implementation("com.github.MKergall:osmbonuspack:6.9.0")
 
     // --- CAMERA X ---
     implementation("androidx.camera:camera-core:1.3.4")

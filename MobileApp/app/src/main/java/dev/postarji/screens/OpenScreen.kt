@@ -20,7 +20,6 @@ import kotlinx.coroutines.withContext
 
 @Composable
 fun OpenScreen(
-    navController: NavHostController,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
