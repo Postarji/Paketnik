@@ -1,5 +1,7 @@
 ﻿package dev.postarji.tsp
 
+import kotlinx.coroutines.delay
+
 // We add default values, but now we can override them when we create the class!
 class GeneticAlgorithm(
     private val tsp: TSP,
@@ -60,6 +62,64 @@ class GeneticAlgorithm(
             val currentBest = population.minByOrNull { it.distance }
             if (currentBest != null && currentBest.distance < bestTour.distance) {
                 bestTour = Tour(currentBest)
+            }
+        }
+
+        return bestTour
+    }
+
+    suspend fun runVisual(onUpdate: (Tour) -> Unit): Tour {
+        population.clear()
+
+        for (i in 0 until populationSize) {
+            val t = Tour()
+
+            t.generateIndividual(tsp.cities)
+            tsp.calculateDistance(t)
+
+            population.add(t)
+        }
+
+        var bestTour = population.minByOrNull { it.distance } ?: Tour()
+        onUpdate(Tour(bestTour))
+
+        var evaluations = populationSize
+        val maxEvaluations = 1000 * tsp.dimension
+
+        while (evaluations < maxEvaluations) {
+            val newPopulation = ArrayList<Tour>()
+
+            if (elitism) {
+                newPopulation.add(Tour(bestTour))
+            }
+
+            while (newPopulation.size < populationSize) {
+                val parent1 = tournamentSelection()
+                val parent2 = tournamentSelection()
+
+                var child = if (RandomUtils.checkProbability(crossoverRate)) {
+                    pmxCrossover(parent1, parent2)
+                } else {
+                    Tour(parent1)
+                }
+
+                if (RandomUtils.checkProbability(mutationRate)) {
+                    swapMutation(child)
+                }
+
+                tsp.calculateDistance(child)
+                evaluations++
+
+                newPopulation.add(child)
+            }
+
+            population = newPopulation
+
+            val currentBest = population.minByOrNull { it.distance }
+            if (currentBest != null && currentBest.distance < bestTour.distance) {
+                bestTour = Tour(currentBest)
+                onUpdate(Tour(bestTour))
+                delay(3)
             }
         }
 

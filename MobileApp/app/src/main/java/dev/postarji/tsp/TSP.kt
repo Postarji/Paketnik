@@ -41,6 +41,10 @@ class TSP(private val context: Context) {
                     section = "WEIGHTS"
                     continue
                 }
+                if (cleanLine == "DISPLAY_DATA_SECTION") {
+                    section = "DISPLAY"
+                    continue
+                }
 
                 if (section == "HEADER") {
                     if (cleanLine.startsWith("NAME")) name = cleanLine.split(":")[1].trim()
@@ -49,6 +53,15 @@ class TSP(private val context: Context) {
                     if (cleanLine.startsWith("EDGE_WEIGHT_FORMAT")) edgeWeightFormat = cleanLine.split(":")[1].trim()
                 }
                 else if (section == "NODES") {
+                    val parts = cleanLine.split("\\s+".toRegex()).filter { it.isNotEmpty() }
+                    if (parts.size >= 3) {
+                        val index = parts[0].toInt()
+                        val x = parts[1].toDouble()
+                        val y = parts[2].toDouble()
+                        cities.add(City(index, x, y))
+                    }
+                }
+                else if (section == "DISPLAY") {
                     val parts = cleanLine.split("\\s+".toRegex()).filter { it.isNotEmpty() }
                     if (parts.size >= 3) {
                         val index = parts[0].toInt()
@@ -77,9 +90,10 @@ class TSP(private val context: Context) {
         var count = 0
         weights = Array(dimension) { DoubleArray(dimension) }
 
-        cities.clear()
-        for (i in 1..dimension) {
-            cities.add(City(i, 0.0, 0.0))
+        if (cities.isEmpty()) {
+            for (i in 1..dimension) {
+                cities.add(City(i, 0.0, 0.0))
+            }
         }
 
         while (scanner.hasNext()) {
