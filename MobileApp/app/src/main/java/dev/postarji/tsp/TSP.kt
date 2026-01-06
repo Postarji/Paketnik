@@ -13,8 +13,6 @@ class TSP(private val context: Context) {
 
     val cities = ArrayList<City>()
 
-    // Student 2: This is the matrix. For the real problem, you need to overwrite this
-    // with your own API data (Time or Distance).
     var weights: Array<DoubleArray>? = null
 
     fun loadData(filename: String) {

@@ -17,7 +17,6 @@ class BenchmarkRunner(private val context: Context) {
         "dca1389.tsp"
     )
 
-    // Ensure this matches your team name format
     private val teamName = "Postarji"
 
     suspend fun runAllBenchmarks() = withContext(Dispatchers.IO) {
@@ -36,7 +35,6 @@ class BenchmarkRunner(private val context: Context) {
         val results = ArrayList<Double>()
         var bestTourEver: Tour? = null
 
-        // Run 30 times
         for (i in 0 until 30) {
             RandomUtils.setSeedFromTime()
             val bestTour = ga.run()
@@ -46,26 +44,21 @@ class BenchmarkRunner(private val context: Context) {
                 bestTourEver = bestTour
             }
 
-            // Log progress for you to see in Logcat
             if (i % 5 == 0) Log.d("Benchmark", "$filename Run $i/30: ${bestTour.distance}")
         }
 
-        // Save the raw numbers (for the professor's script)
         saveRawResults(filename, results)
 
-        // Save the best tour separately (for safety/manual checking)
         if (bestTourEver != null) {
             saveBestSolution(filename, bestTourEver)
         }
     }
 
-    // --- FILE 1: THE RAW DATA (Matches Ackley format) ---
     private fun saveRawResults(originalFilename: String, results: List<Double>) {
         val nameWithoutExt = originalFilename.replace(".tsp", "")
         val outputName = "${teamName}_${nameWithoutExt}.txt"
 
         val sb = StringBuilder()
-        // JUST the numbers, one per line. No headers.
         for (score in results) {
             sb.append("$score\n")
         }
@@ -81,7 +74,6 @@ class BenchmarkRunner(private val context: Context) {
         }
     }
 
-    // --- FILE 2: THE BEST PATH (Just in case you need it) ---
     private fun saveBestSolution(originalFilename: String, bestTour: Tour) {
         val nameWithoutExt = originalFilename.replace(".tsp", "")
         val outputName = "${teamName}_${nameWithoutExt}_SOLUTION.txt"
@@ -89,7 +81,6 @@ class BenchmarkRunner(private val context: Context) {
         val sb = StringBuilder()
         sb.append("Best Distance: ${bestTour.distance}\n")
         sb.append("Tour Sequence:\n")
-        // Space separated indices (1-based)
         sb.append(bestTour.cities.joinToString(" ") { it.index.toString() })
 
         try {

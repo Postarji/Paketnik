@@ -3,7 +3,6 @@
 import java.util.Collections
 
 class Tour {
-    // Student 3: This is the final list of cities you need to draw on the map in this order.
     val cities: ArrayList<City> = ArrayList()
     var distance: Double = 0.0
 

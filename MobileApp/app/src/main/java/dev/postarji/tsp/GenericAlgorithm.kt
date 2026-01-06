@@ -2,7 +2,6 @@
 
 import kotlinx.coroutines.delay
 
-// We add default values, but now we can override them when we create the class!
 class GeneticAlgorithm(
     private val tsp: TSP,
     var populationSize: Int = 100,
@@ -15,7 +14,6 @@ class GeneticAlgorithm(
     private var tournamentSize = 5
 
     fun run(): Tour {
-        // 1. Initialize Population
         population.clear()
         for (i in 0 until populationSize) {
             val t = Tour()
@@ -26,7 +24,6 @@ class GeneticAlgorithm(
 
         var bestTour = population.minByOrNull { it.distance } ?: Tour()
 
-        // Dynamic termination: 1000 evaluations per city (as per instructions)
         var evaluations = populationSize
         val maxEvaluations = 1000 * tsp.dimension
 
