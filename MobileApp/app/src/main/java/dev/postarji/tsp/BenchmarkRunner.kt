@@ -4,7 +4,8 @@ import android.content.Context
 import android.util.Log
 import java.io.File
 import java.io.FileOutputStream
-import java.util.Locale
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class BenchmarkRunner(private val context: Context) {
 
@@ -16,14 +17,13 @@ class BenchmarkRunner(private val context: Context) {
         "dca1389.tsp"
     )
 
+    // Ensure this matches your team name format
     private val teamName = "Postarji"
 
-    fun runAllBenchmarks() {
-        Thread {
-            for (filename in files) {
-                runSingleBenchmark(filename)
-            }
-        }.start()
+    suspend fun runAllBenchmarks() = withContext(Dispatchers.IO) {
+        for (filename in files) {
+            runSingleBenchmark(filename)
+        }
     }
 
     private fun runSingleBenchmark(filename: String) {
@@ -36,9 +36,9 @@ class BenchmarkRunner(private val context: Context) {
         val results = ArrayList<Double>()
         var bestTourEver: Tour? = null
 
+        // Run 30 times
         for (i in 0 until 30) {
             RandomUtils.setSeedFromTime()
-
             val bestTour = ga.run()
             results.add(bestTour.distance)
 
@@ -46,41 +46,28 @@ class BenchmarkRunner(private val context: Context) {
                 bestTourEver = bestTour
             }
 
-            Log.d("Benchmark", "Run $i for $filename: ${bestTour.distance}")
+            // Log progress for you to see in Logcat
+            if (i % 5 == 0) Log.d("Benchmark", "$filename Run $i/30: ${bestTour.distance}")
         }
 
-        saveResultsToFile(filename, results, bestTourEver)
+        // Save the raw numbers (for the professor's script)
+        saveRawResults(filename, results)
+
+        // Save the best tour separately (for safety/manual checking)
+        if (bestTourEver != null) {
+            saveBestSolution(filename, bestTourEver)
+        }
     }
 
-    private fun saveResultsToFile(originalFilename: String, results: List<Double>, bestTour: Tour?) {
+    // --- FILE 1: THE RAW DATA (Matches Ackley format) ---
+    private fun saveRawResults(originalFilename: String, results: List<Double>) {
         val nameWithoutExt = originalFilename.replace(".tsp", "")
         val outputName = "${teamName}_${nameWithoutExt}.txt"
 
         val sb = StringBuilder()
-        sb.append("Benchmark Results for $originalFilename\n")
-        sb.append("Runs: 30\n")
-        sb.append("----------------------------\n")
-
-        var min = Double.MAX_VALUE
-        var max = Double.MIN_VALUE
-        var sum = 0.0
-
-        for ((index, score) in results.withIndex()) {
-            sb.append("Run ${index + 1}: $score\n")
-            if (score < min) min = score
-            if (score > max) max = score
-            sum += score
-        }
-
-        val avg = sum / results.size
-        sb.append("----------------------------\n")
-        sb.append(String.format(Locale.US, "Min: %.2f\n", min))
-        sb.append(String.format(Locale.US, "Max: %.2f\n", max))
-        sb.append(String.format(Locale.US, "Avg: %.2f\n", avg))
-
-        if (bestTour != null) {
-            sb.append("\nBest Tour Sequence:\n")
-            sb.append(bestTour.toString())
+        // JUST the numbers, one per line. No headers.
+        for (score in results) {
+            sb.append("$score\n")
         }
 
         try {
@@ -88,9 +75,30 @@ class BenchmarkRunner(private val context: Context) {
             val fos = FileOutputStream(file)
             fos.write(sb.toString().toByteArray())
             fos.close()
-            Log.i("Benchmark", "Saved results to: ${file.absolutePath}")
+            Log.i("Benchmark", "SAVED RAW: ${file.absolutePath}")
         } catch (e: Exception) {
-            Log.e("Benchmark", "Failed to save file", e)
+            Log.e("Benchmark", "Failed to save raw file", e)
+        }
+    }
+
+    // --- FILE 2: THE BEST PATH (Just in case you need it) ---
+    private fun saveBestSolution(originalFilename: String, bestTour: Tour) {
+        val nameWithoutExt = originalFilename.replace(".tsp", "")
+        val outputName = "${teamName}_${nameWithoutExt}_SOLUTION.txt"
+
+        val sb = StringBuilder()
+        sb.append("Best Distance: ${bestTour.distance}\n")
+        sb.append("Tour Sequence:\n")
+        // Space separated indices (1-based)
+        sb.append(bestTour.cities.joinToString(" ") { it.index.toString() })
+
+        try {
+            val file = File(context.filesDir, outputName)
+            val fos = FileOutputStream(file)
+            fos.write(sb.toString().toByteArray())
+            fos.close()
+        } catch (e: Exception) {
+            Log.e("Benchmark", "Failed to save solution file", e)
         }
     }
 }
