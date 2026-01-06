@@ -1,14 +1,11 @@
 package dev.postarji.data
 
 import android.content.Context
-import android.location.Geocoder
 import android.util.Log
 import dev.postarji.tsp.City
 import dev.postarji.tsp.TSP
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.osmdroid.util.GeoPoint
-import java.util.Locale
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
@@ -21,45 +18,50 @@ class DistanceMatrixResult(
 
 class LocationProvider(private val context: Context) {
 
-    private val BATCH_SIZE = 70
-
-    suspend fun createRealWorldTSP(useTimeOptimization: Boolean, selectedCities: List<City>): TSP = withContext(Dispatchers.IO) {
-        val tsp = TSP(context)
-
-        val allCities = selectedCities
-        tsp.cities.clear()
-        tsp.cities.addAll(allCities)
-
-        tsp.name = "Direct4Me Real World (Full 126 Locations)"
-        tsp.dimension = allCities.size
-
-        Log.d("RealWorld", "Fetching Matrix for ${allCities.size} cities using BATCHING...")
-
-        val matrixResult = fetchBatchedDistanceMatrix(allCities)
-
-        if (matrixResult != null) {
-            Log.d("RealWorld", "OSRM Batch Success! We have the full 126x126 matrix.")
-            tsp.edgeWeightType = "EXPLICIT"
-            tsp.edgeWeightFormat = "FULL_MATRIX"
-            tsp.weights = if (useTimeOptimization) {
-                matrixResult.durationMatrix
-            } else {
-                matrixResult.distanceMatrix
-            }
-        } else {
-            Log.e("RealWorld", "Batching failed. Switching to Synthetic Fallback.")
-            tsp.edgeWeightType = "EXPLICIT"
-            tsp.edgeWeightFormat = "FULL_MATRIX"
-            tsp.weights = generateSyntheticAsymmetricMatrix(allCities)
-        }
-
-        tsp
+    companion object {
+        private const val BATCH_SIZE = 70
     }
+
+    suspend fun createRealWorldTSP(useTimeOptimization: Boolean, selectedCities: List<City>): TSP =
+        withContext(Dispatchers.IO) {
+            val tsp = TSP(context)
+
+            tsp.cities.clear()
+            tsp.cities.addAll(selectedCities)
+
+            tsp.name = "Direct4Me Real World (Full 126 Locations)"
+            tsp.dimension = selectedCities.size
+
+            Log.d(
+                "RealWorld",
+                "Fetching Matrix for ${selectedCities.size} cities using BATCHING..."
+            )
+
+            val matrixResult = fetchBatchedDistanceMatrix(selectedCities)
+
+            if (matrixResult != null) {
+                Log.d("RealWorld", "OSRM Batch Success! We have the full 126x126 matrix.")
+                tsp.edgeWeightType = "EXPLICIT"
+                tsp.edgeWeightFormat = "FULL_MATRIX"
+                tsp.weights = if (useTimeOptimization) {
+                    matrixResult.durationMatrix
+                } else {
+                    matrixResult.distanceMatrix
+                }
+            } else {
+                Log.e("RealWorld", "Batching failed. Switching to Synthetic Fallback.")
+                tsp.edgeWeightType = "EXPLICIT"
+                tsp.edgeWeightFormat = "FULL_MATRIX"
+                tsp.weights = generateSyntheticAsymmetricMatrix(selectedCities)
+            }
+
+            tsp
+        }
 
     private fun fetchBatchedDistanceMatrix(cities: List<City>): DistanceMatrixResult? {
         val n = cities.size
-        val finalDistM = Array(n) { DoubleArray(n) }
-        val finalDurM = Array(n) { DoubleArray(n) }
+        val finalDistanceMatrix = Array(n) { DoubleArray(n) }
+        val finalDurationMatrix = Array(n) { DoubleArray(n) }
         val client = OkHttpClient()
 
         for (startIndex in 0 until n step BATCH_SIZE) {
@@ -71,7 +73,8 @@ class LocationProvider(private val context: Context) {
             val allCoords = cities.joinToString(";") { "${it.x},${it.y}" }
             val sourcesParam = batchSourceIndices.joinToString(";")
 
-            val url = "https://router.project-osrm.org/table/v1/driving/$allCoords?sources=$sourcesParam&annotations=distance,duration"
+            val url =
+                "https://router.project-osrm.org/table/v1/driving/$allCoords?sources=$sourcesParam&annotations=distance,duration"
 
             try {
                 val request = Request.Builder().url(url).build()
@@ -84,18 +87,19 @@ class LocationProvider(private val context: Context) {
 
                     if (!json.has("distances")) return null
 
-                    val dists = json.getJSONArray("distances")
-                    val durs = json.getJSONArray("durations")
+                    val distanceRows = json.getJSONArray("distances")
+                    val durationRows = json.getJSONArray("durations")
 
-                    for (i in 0 until (endIndex - startIndex)) {
+                    val batchSize = endIndex - startIndex
+                    for (i in 0 until batchSize) {
                         val matrixRowIndex = startIndex + i
 
-                        val dRow = dists.getJSONArray(i)
-                        val tRow = durs.getJSONArray(i)
+                        val distanceRow = distanceRows.getJSONArray(i)
+                        val durationRow = durationRows.getJSONArray(i)
 
                         for (col in 0 until n) {
-                            finalDistM[matrixRowIndex][col] = dRow.getDouble(col)
-                            finalDurM[matrixRowIndex][col] = tRow.getDouble(col)
+                            finalDistanceMatrix[matrixRowIndex][col] = distanceRow.getDouble(col)
+                            finalDurationMatrix[matrixRowIndex][col] = durationRow.getDouble(col)
                         }
                     }
                 }
@@ -103,11 +107,8 @@ class LocationProvider(private val context: Context) {
                 Log.e("RealWorld", "Batch error: ${e.message}")
                 return null
             }
-
-//            Thread.sleep(100)
         }
-
-        return DistanceMatrixResult(finalDistM, finalDurM)
+        return DistanceMatrixResult(finalDistanceMatrix, finalDurationMatrix)
     }
 
     private fun generateSyntheticAsymmetricMatrix(cities: List<City>): Array<DoubleArray> {
@@ -116,7 +117,9 @@ class LocationProvider(private val context: Context) {
         val random = Random(12345)
         for (i in 0 until n) {
             for (j in 0 until n) {
-                if (i == j) matrix[i][j] = 0.0
+                if (i == j){
+                    matrix[i][j] = 0.0
+                }
                 else {
                     val base = cities[i].distanceTo(cities[j]) * 1300
                     matrix[i][j] = base * random.nextDouble(0.9, 1.1)
