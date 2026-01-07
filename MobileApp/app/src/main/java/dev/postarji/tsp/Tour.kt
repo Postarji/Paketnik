@@ -17,6 +17,7 @@ class Tour {
         this.distance = other.distance
     }
 
+    // Fisher-Yates shuffle
     fun generateIndividual(allCities: List<City>) {
         cities.clear()
         cities.addAll(allCities)

@@ -8,8 +8,8 @@ import kotlin.math.sqrt
 class TSP(private val context: Context) {
     var name: String = ""
     var dimension: Int = 0
-    var edgeWeightType: String = ""
-    var edgeWeightFormat: String = ""
+    var edgeWeightType: String = "" // EUC_2D, EXPLICIT
+    var edgeWeightFormat: String = "" // Matix shape
 
     val cities = ArrayList<City>()
 
@@ -123,6 +123,7 @@ class TSP(private val context: Context) {
         for (i in 0 until tour.cities.size - 1) {
             dist += getDistance(tour.cities[i], tour.cities[i+1])
         }
+        // Hamiltonov ciklus
         dist += getDistance(tour.cities.last(), tour.cities.first())
 
         tour.distance = dist

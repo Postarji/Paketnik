@@ -2,26 +2,39 @@
 
 import java.util.Random
 
+
 object RandomUtils {
-    private var random = Random()
+
+    private var seed: Long = 123
+    private val random = Random(seed)
+
+    fun setSeed(newSeed: Long) {
+        seed = newSeed
+        random.setSeed(seed)
+    }
 
     fun setSeedFromTime() {
-        random = Random(System.currentTimeMillis())
+        seed = System.currentTimeMillis()
+        random.setSeed(seed)
     }
 
-    fun setSeed(seed: Long) {
-        random = Random(seed)
-    }
-
-    fun nextInt(bound: Int): Int {
-        return random.nextInt(bound)
+    fun getSeed(): Long {
+        return seed
     }
 
     fun nextDouble(): Double {
         return random.nextDouble()
     }
 
+    fun nextInt(upperBound: Int): Int {
+        return random.nextInt(upperBound)
+    }
+
+    fun nextInt(lowerBound: Int, upperBound: Int): Int {
+        return lowerBound + random.nextInt(upperBound - lowerBound)
+    }
+
     fun checkProbability(probability: Double): Boolean {
-        return random.nextDouble() < probability
+        return nextDouble() < probability
     }
 }
