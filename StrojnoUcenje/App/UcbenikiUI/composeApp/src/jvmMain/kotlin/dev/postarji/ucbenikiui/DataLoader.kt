@@ -25,6 +25,7 @@ class DataLoader {
                             Description = parts[3],
                             NumberOfPages = parts[4].toInt(),
                             BindingType = parts[5],
+                            Cluster = parts[6],
                         )
                         books.add(book)
                     }

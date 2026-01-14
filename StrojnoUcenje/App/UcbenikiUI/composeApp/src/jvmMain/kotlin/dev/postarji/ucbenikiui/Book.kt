@@ -7,4 +7,5 @@ data class Book(
     val Description: String,
     val NumberOfPages: Int,
     val BindingType: String,
+    val Cluster: String,
 )
