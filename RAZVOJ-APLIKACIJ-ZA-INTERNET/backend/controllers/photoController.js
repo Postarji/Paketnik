@@ -2,6 +2,8 @@ var PhotoModel = require('../models/photoModel.js');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
+const { compressImage } = require('../ImageCompressor');
 
 /**
  * photoController.js
@@ -62,40 +64,56 @@ module.exports = {
     /**
      * photoController.create()
      */
-    create: function (req, res) {
-        // Ensure the path is consistently formatted
-        const imagePath = req.file.filename.startsWith('images/') 
-            ? req.file.filename 
-            : `images/${req.file.filename}`;
+    create: async function (req, res) {
+        console.log(req.file)
 
-        var photo = new PhotoModel({
-            name: req.body.name,
-            message: req.body.message,
-            path: imagePath,
-            postedBy: req.session.userId,
-            views: 0,
-            likes: [],
-            dislikes: [],
-            flags: [],
-            createdAt: new Date()
-        });
+        if (!req.file) {
+            return res.status(400).json({message: 'No image uploaded'});
+        }
 
-        photo.save(function (err, photo) {
+        const compressedImage = await compressImage(req.file.buffer);
+
+        const filename = crypto.randomBytes(16).toString("hex");
+        const uploadDir = path.join(__dirname, '../public/images');
+        const targetPath = path.join(uploadDir, filename);
+
+        fs.writeFile(targetPath, compressedImage, function (err) {
             if (err) {
                 return res.status(500).json({
-                    message: 'Error when creating photo',
+                    message: 'Error saving file',
                     error: err
                 });
             }
 
-            photo.populate('postedBy', 'username', function(err, populatedPhoto) {
+            var photo = new PhotoModel({
+                name: req.body.name,
+                message: req.body.message,
+                path: `images/${filename}`,
+                postedBy: req.session.userId,
+                views: 0,
+                likes: [],
+                dislikes: [],
+                flags: [],
+                createdAt: new Date()
+            });
+
+            photo.save(function (err, photo) {
                 if (err) {
                     return res.status(500).json({
-                        message: 'Error populating photo data',
+                        message: 'Error when creating photo',
                         error: err
                     });
                 }
-                return res.status(201).json(populatedPhoto);
+
+                photo.populate('postedBy', 'username', function (err, populatedPhoto) {
+                    if (err) {
+                        return res.status(500).json({
+                            message: 'Error populating photo data',
+                            error: err
+                        });
+                    }
+                    return res.status(201).json(populatedPhoto);
+                });
             });
         });
     },
@@ -192,7 +210,7 @@ module.exports = {
                     console.error('Error saving photo:', err);
                     return res.status(500).json({ message: 'Error liking photo' });
                 }
-                
+
                 updated.populate('postedBy', 'username', function(err, populatedPhoto) {
                     if (err) {
                         return res.status(500).json({ message: 'Error populating photo data' });
@@ -230,7 +248,7 @@ module.exports = {
                     console.error('Error saving photo:', err);
                     return res.status(500).json({ message: 'Error disliking photo' });
                 }
-                
+
                 updated.populate('postedBy', 'username', function(err, populatedPhoto) {
                     if (err) {
                         return res.status(500).json({ message: 'Error populating photo data' });
@@ -240,7 +258,7 @@ module.exports = {
             });
         });
     },
-    
+
     flag: function(req, res) {
         const photoId = req.params.id;
         const userId = req.session.userId;
@@ -268,7 +286,7 @@ module.exports = {
                     console.error('Error saving photo:', err);
                     return res.status(500).json({ message: 'Error flagging photo' });
                 }
-                
+
                 updated.populate('postedBy', 'username', function(err, populatedPhoto) {
                     if (err) {
                         return res.status(500).json({ message: 'Error populating photo data' });
