@@ -11,7 +11,6 @@ function Photo({ photo, showDetails }) {
     const userContext = useContext(UserContext);
     const navigate = useNavigate();
 
-    // Format date helper function
     const formatDate = (dateString) => {
         const options = { 
             year: 'numeric', 
@@ -66,7 +65,6 @@ function Photo({ photo, showDetails }) {
             });
             if (res.ok) {
                 const updatedPhoto = await res.json();
-                // Update the flags count from the response
                 const newFlagCount = (updatedPhoto.flags || []).length;
                 setFlags(newFlagCount);
                 if (newFlagCount >= 10) {
@@ -113,7 +111,6 @@ function Photo({ photo, showDetails }) {
         return null;
     };
 
-    // Return early if photo is hidden
     if (isHidden) {
         return (
             <div className="card mb-4">
@@ -127,27 +124,30 @@ function Photo({ photo, showDetails }) {
         );
     }
 
-    // Format the image URL correctly
-    const imageUrl = photo.path.startsWith('http') 
-        ? photo.path 
-        : photo.path.startsWith('/') 
-            ? `http://localhost:3001${photo.path}`
-            : `http://localhost:3001/${photo.path}`;
+    const imageUrl = photo.path.startsWith('http')
+        ? photo.path
+        : `http://localhost:3001/photos/image/${photo.path.split('/').pop()}`;
 
     return (
         <div className="card mb-4" onClick={() => !showDetails && navigate(`/photo/${photo._id}`)}>
-            <img 
+            <img
                 src={imageUrl}
                 alt={photo.name}
                 className="card-img-top"
-                style={{ 
+                style={{
                     cursor: showDetails ? 'default' : 'pointer',
                     height: '300px',
                     objectFit: 'cover'
                 }}
                 onError={(e) => {
-                    console.error('Error loading image:', imageUrl);
-                    e.target.src = 'https://via.placeholder.com/300?text=Book+Image+Not+Available';
+                    e.target.onerror = null;
+
+                    console.warn('Image failed to load:', imageUrl);
+
+                    e.target.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkqAcAAIUAgUW0RjgAAAAASUVORK5CYII=';
+
+                    e.target.style.objectFit = 'contain';
+                    e.target.style.backgroundColor = '#f0f0f0';
                 }}
             />
             <div className="card-body">

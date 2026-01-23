@@ -23,6 +23,8 @@ router.get('/sorted', photoController.listSortedByDate);
 router.put('/:id', requiresLogin, photoController.update);
 router.get('/:id', photoController.show);
 
+router.get('/image/:filename', photoController.serveImage);
+
 router.post('/', requiresLogin, upload.single('image'), photoController.create);
 
 router.put('/:id', photoController.update);

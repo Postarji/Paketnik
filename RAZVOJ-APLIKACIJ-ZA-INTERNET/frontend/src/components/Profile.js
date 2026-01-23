@@ -6,19 +6,21 @@ import { Navigate, Link } from 'react-router-dom';
 const PYTHON_API_URL = "http://localhost:8080"; // TODO
 
 function Profile() {
-    const userContext = useContext(UserContext);    const [profile, setProfile] = useState({});
+    const userContext = useContext(UserContext);
+    const [profile, setProfile] = useState({});
     const [userPhotos, setUserPhotos] = useState([]);
     const [boxes, setBoxes] = useState([]);
     const [availableBoxes, setAvailableBoxes] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('posts'); // 'posts' or 'boxes'
     const [selectedPosts, setSelectedPosts] = useState([]);
-    const [showBoxSelection, setShowBoxSelection] = useState(false);    // For capturing image with camera
+    const [showBoxSelection, setShowBoxSelection] = useState(false);
+    // For capturing image with camera
     const videoRef = useRef(null);
     const [stream, setStream] = useState(null);
     const [showCameraModal, setShowCameraModal] = useState(false);
     const [statusMessage, setStatusMessage] = useState('');
-    
+
     useEffect(() => {
         const getProfile = async function() {
             try {
@@ -35,7 +37,8 @@ function Profile() {
                     fetch("http://localhost:3001/boxes", {
                         credentials: "include"
                     })
-                ]);                // Convert responses to JSON
+                ]);
+                // Convert responses to JSON
                 const profileData = await profileRes.json();
                 const photosData = await photosRes.json();
                 const boxesData = await boxesRes.json();
@@ -44,7 +47,7 @@ function Profile() {
                 if (profileData && profileData._id) {
                     setProfile(profileData);
                     userContext.setUserContext(profileData); //posodobi context tukaj
-                    setUserPhotos(photosData.filter(photo => 
+                    setUserPhotos(photosData.filter(photo =>
                         photo.postedBy?._id === profileData._id
                     ));
                     setBoxes(boxesData);
@@ -58,18 +61,18 @@ function Profile() {
             }
         };
         getProfile();
-    }, []);    const getImageUrl = (photo) => {
-        // If path already contains the full URL, use it
+    }, []);
+
+    // --- FIX 1: Point to the Decompression API Endpoint ---
+    const getImageUrl = (photo) => {
         if (photo.path.startsWith('http')) {
             return photo.path;
         }
-        // If path starts with /images/, remove the leading slash
-        const imagePath = photo.path.startsWith('/images/') 
-            ? photo.path.substring(1) 
-            : photo.path.startsWith('images/') 
-                ? photo.path 
-                : `images/${photo.path}`;
-        return `http://localhost:3001/${imagePath}`;
+        // Extract just the filename (e.g. remove "images/")
+        const filename = photo.path.split('/').pop();
+
+        // Point to the new route that handles decompression
+        return `http://localhost:3001/photos/image/${filename}`;
     };
 
     // Handle post selection
@@ -79,7 +82,9 @@ function Profile() {
         } else {
             setSelectedPosts(prev => prev.filter(id => id !== postId));
         }
-    };    // Handle "Put in Box" button click
+    };
+
+    // Handle "Put in Box" button click
     const handlePutInBox = async () => {
         if (selectedPosts.length === 0) {
             alert('Please select at least one post/book first.');
@@ -91,23 +96,10 @@ function Profile() {
             const response = await fetch('http://localhost:3001/boxes/available-boxes', {
                 credentials: 'include'
             });
-            
+
             console.log('Response status:', response.status);
-              if (response.ok) {
+            if (response.ok) {
                 const availableBoxesData = await response.json();
-                console.log('Available boxes data:', availableBoxesData);
-                // Log current books data structure for debugging
-                availableBoxesData.forEach((box, index) => {
-                    console.log(`Box ${index + 1} (${box.name}):`, box);
-                    if (box.currentBooks && box.currentBooks.length > 0) {
-                        console.log('Current books:', box.currentBooks);
-                        box.currentBooks.forEach((book, bookIndex) => {
-                            console.log(`  Book ${bookIndex + 1}:`, book);
-                            console.log(`    postId:`, book.postId);
-                            console.log(`    name:`, book.postId?.name);
-                        });
-                    }
-                });
                 setAvailableBoxes(availableBoxesData);
                 setShowBoxSelection(true);
             } else {
@@ -136,7 +128,7 @@ function Profile() {
             });
 
             const data = await response.json();
-            
+
             if (response.ok) {
                 alert(`Successfully added ${selectedPosts.length} book(s) to the box!`);
                 setSelectedPosts([]);
@@ -168,7 +160,9 @@ function Profile() {
     // Check if box can accommodate selected posts
     const canAccommodateSelection = (box) => {
         return getAvailableSpace(box) >= selectedPosts.length;
-    };const startCamera = async () => {
+    };
+
+    const startCamera = async () => {
         try {
             const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
             setStream(mediaStream);
@@ -193,8 +187,10 @@ function Profile() {
     const handleEnableWebcam2FA = () => {
         setShowCameraModal(true);
         startCamera();
-    };    const captureAndRegisterFace = async () => {
-        if (videoRef.current && userContext.user?.username) { // Use username or _id
+    };
+
+    const captureAndRegisterFace = async () => {
+        if (videoRef.current && userContext.user?.username) {
             const canvas = document.createElement('canvas');
             canvas.width = videoRef.current.videoWidth;
             canvas.height = videoRef.current.videoHeight;
@@ -209,12 +205,10 @@ function Profile() {
                     const response = await fetch(`${PYTHON_API_URL}/web_register_face/${userContext.user.username}`, {
                         method: 'POST',
                         body: formData,
-                        // Without 'Content-Type' header, browser sets it correctly for FormData
                     });
                     const data = await response.json();
                     if (response.ok) {
                         setStatusMessage("Face successfully registered! " + (data.message || ""));
-                        // Maybe update user state to show Face ID is set up
                     } else {
                         setStatusMessage("Error registering face: " + (data.detail || response.statusText));
                     }
@@ -223,13 +217,15 @@ function Profile() {
                     setStatusMessage("Client-side error during registration: " + error.message);
                 } finally {
                     stopCamera();
-                    setShowCameraModal(false); // Close modal window
+                    setShowCameraModal(false);
                 }
             }, 'image/jpeg');
         } else {
             setStatusMessage("User not logged in or camera not ready.");
         }
-    };    const handleRequestPhone2FASetup = async () => {
+    };
+
+    const handleRequestPhone2FASetup = async () => {
         if (!userContext.user?._id) {
             setStatusMessage("User not logged in.");
             return;
@@ -238,9 +234,8 @@ function Profile() {
         try {
             const response = await fetch("http://localhost:3001/users/request-phone-2fa-setup", {
                 method: "POST",
-                credentials: "include", // Important for sending session cookie
+                credentials: "include",
                 headers: { 'Content-Type': 'application/json' },
-                // Body not needed as Node.js backend gets userId from session
             });
             const data = await response.json();
             if (response.ok) {
@@ -254,10 +249,11 @@ function Profile() {
         }
     };
 
-
     if (!userContext.user) {
         return <Navigate replace to="/login" />;
-    }    if (loading && !profile._id) { // Adjusted to not show loading if we already have profile
+    }
+
+    if (loading && !profile._id) {
         return (
             <div className="container mt-4">
                 <div className="d-flex justify-content-center">
@@ -267,20 +263,19 @@ function Profile() {
                 </div>
             </div>
         );
-    }    // Check if profile._id is defined before display
+    }
+
     if (!profile._id && !loading) {
-        // If fetch fails or user is not authorized
         console.warn("Profile data is not available, user might be logged out or fetch failed.");
-        // Consider redirecting to login if profile fetch fails consistently
-        // return <Navigate replace to="/login" />; // for stricter redirection
         return <div className="container mt-4"><p>Could not load profile. Please try logging in again.</p></div>
     }
 
-    const totalLikes = userPhotos.reduce((sum, photo) => 
+    const totalLikes = userPhotos.reduce((sum, photo) =>
         sum + (photo.likes?.length || 0), 0
     );
 
-    return (        <div className="container mt-4">
+    return (
+        <div className="container mt-4">
             {/* Camera modal window */}
             {showCameraModal && (
                 <div className="modal fade show d-block" tabIndex="-1" style={{backgroundColor: "rgba(0,0,0,0.5)"}}>
@@ -293,7 +288,7 @@ function Profile() {
                             <div className="modal-body text-center">
                                 <video ref={videoRef} autoPlay playsInline muted width="320" height="240" style={{border: "1px solid #ccc"}}></video>
                                 {stream && (
-                                     <button className="btn btn-success mt-2" onClick={captureAndRegisterFace}>
+                                    <button className="btn btn-success mt-2" onClick={captureAndRegisterFace}>
                                         Capture and Save Face
                                     </button>
                                 )}
@@ -329,18 +324,19 @@ function Profile() {
                                         <h5>{totalLikes}</h5>
                                         <small>Total Likes</small>
                                     </div>
-                                </div>                            </div>
+                                </div>
+                            </div>
                             {/* 2FA BUTTONS */}
                             <div className="mt-4">
                                 <h5 className="mb-3">2FA Settings</h5>
-                                <button 
+                                <button
                                     className="btn btn-outline-success w-100 mb-2 d-flex align-items-center justify-content-center"
                                     onClick={handleEnableWebcam2FA}
                                 >
                                     <i className="bi bi-camera-video me-2"></i>
                                     Setup 2FA with Computer Camera
                                 </button>
-                                <button 
+                                <button
                                     className="btn btn-outline-warning w-100 d-flex align-items-center justify-content-center"
                                     onClick={handleRequestPhone2FASetup}
                                 >
@@ -352,7 +348,7 @@ function Profile() {
                         </div>
                     </div>
                 </div>
-                        
+
 
                 {/* Content Area */}
                 <div className="col-md-8">
@@ -360,7 +356,7 @@ function Profile() {
                         <div className="card-header">
                             <ul className="nav nav-tabs card-header-tabs">
                                 <li className="nav-item">
-                                    <button 
+                                    <button
                                         className={`nav-link ${activeTab === 'posts' ? 'active' : ''}`}
                                         onClick={() => setActiveTab('posts')}
                                     >
@@ -368,7 +364,7 @@ function Profile() {
                                     </button>
                                 </li>
                                 <li className="nav-item">
-                                    <button 
+                                    <button
                                         className={`nav-link ${activeTab === 'boxes' ? 'active' : ''}`}
                                         onClick={() => setActiveTab('boxes')}
                                     >
@@ -376,7 +372,8 @@ function Profile() {
                                     </button>
                                 </li>
                             </ul>
-                        </div>                        <div className="card-body">
+                        </div>
+                        <div className="card-body">
                             {activeTab === 'posts' ? (
                                 <div>
                                     {selectedPosts.length > 0 && (
@@ -386,14 +383,14 @@ function Profile() {
                                                 {selectedPosts.length} book(s) selected
                                             </span>
                                             <div>
-                                                <button 
+                                                <button
                                                     className="btn btn-primary me-2"
                                                     onClick={handlePutInBox}
                                                 >
                                                     <i className="bi bi-box me-1"></i>
                                                     Put in Box
                                                 </button>
-                                                <button 
+                                                <button
                                                     className="btn btn-outline-secondary"
                                                     onClick={() => setSelectedPosts([])}
                                                 >
@@ -402,7 +399,7 @@ function Profile() {
                                             </div>
                                         </div>
                                     )}
-                                    
+
                                     <div className="row row-cols-1 row-cols-md-2 g-4">
                                         {userPhotos.map(photo => (
                                             <div key={photo._id} className="col">
@@ -425,17 +422,22 @@ function Profile() {
                                                             />
                                                         </div>
                                                     </div>
-                                                    
-                                                    <img 
+
+                                                    {/* --- FIX 2: Updated Image Tag with Safe Fallback --- */}
+                                                    <img
                                                         src={getImageUrl(photo)}
                                                         className="card-img-top"
                                                         alt={photo.name}
                                                         style={{ height: '200px', objectFit: 'cover' }}
                                                         onError={(e) => {
-                                                            console.error('Error loading image:', getImageUrl(photo));
-                                                            e.target.src = 'https://via.placeholder.com/300?text=Book+Image+Not+Available';
+                                                            // Stop the loop!
+                                                            e.target.onerror = null;
+                                                            // Use Base64 placeholder (gray square)
+                                                            e.target.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkqAcAAIUAgUW0RjgAAAAASUVORK5CYII=';
+                                                            e.target.style.backgroundColor = '#f0f0f0';
                                                         }}
                                                     />
+
                                                     <div className="card-body">
                                                         <h5 className="card-title">{photo.name}</h5>
                                                         <p className="card-text">{photo.message}</p>
@@ -466,7 +468,8 @@ function Profile() {
                                             </div>
                                         )}
                                     </div>
-                                </div>                            ) : (
+                                </div>
+                            ) : (
                                 <div className="boxes-grid">
                                     {boxes.length > 0 ? (
                                         <div className="row row-cols-1 row-cols-md-2 g-4">
@@ -516,12 +519,12 @@ function Profile() {
                                                         </div>
                                                         <div className="card-footer bg-transparent">
                                                             <div className="d-flex justify-content-between">
-                                                                <Link to={`/boxes/${box._id}/logs`} 
+                                                                <Link to={`/boxes/${box._id}/logs`}
                                                                       className="btn btn-outline-primary btn-sm">
                                                                     <i className="bi bi-clock-history me-1"></i>
                                                                     View Logs
                                                                 </Link>
-                                                                <Link to={`/boxes/${box._id}/edit`} 
+                                                                <Link to={`/boxes/${box._id}/edit`}
                                                                       className="btn btn-outline-secondary btn-sm">
                                                                     <i className="bi bi-pencil me-1"></i>
                                                                     Edit
@@ -541,7 +544,8 @@ function Profile() {
                                         </div>
                                     )}
                                 </div>
-                            )}                        </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -556,9 +560,9 @@ function Profile() {
                                     <i className="bi bi-box me-2"></i>
                                     Choose a Box for Your Books
                                 </h5>
-                                <button 
-                                    type="button" 
-                                    className="btn-close" 
+                                <button
+                                    type="button"
+                                    className="btn-close"
                                     onClick={() => setShowBoxSelection(false)}
                                 ></button>
                             </div>
@@ -597,7 +601,7 @@ function Profile() {
                                                             <p className="mb-2">
                                                                 <strong>Available space:</strong> {availableSpace} slots
                                                             </p>
-                                                            
+
                                                             {!canAccommodate && box.status !== 'maintenance' && (
                                                                 <div className="alert alert-warning alert-sm p-2">
                                                                     <small>
@@ -636,7 +640,7 @@ function Profile() {
                                                             )}
                                                         </div>
                                                         <div className="card-footer bg-transparent">
-                                                            <button 
+                                                            <button
                                                                 className={`btn w-100 ${canAccommodate && box.status !== 'maintenance' ? 'btn-success' : 'btn-secondary'}`}
                                                                 disabled={isDisabled}
                                                                 onClick={() => handleAddToBox(box._id)}
@@ -672,9 +676,9 @@ function Profile() {
                                 )}
                             </div>
                             <div className="modal-footer">
-                                <button 
-                                    type="button" 
-                                    className="btn btn-secondary" 
+                                <button
+                                    type="button"
+                                    className="btn btn-secondary"
                                     onClick={() => setShowBoxSelection(false)}
                                 >
                                     Cancel

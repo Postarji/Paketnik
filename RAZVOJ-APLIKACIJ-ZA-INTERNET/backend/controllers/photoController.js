@@ -3,7 +3,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
-const { compressImage } = require('../ImageCompressor');
+const { compressImage, decompressImage } = require('../ImageCompressor');
 
 /**
  * photoController.js
@@ -321,6 +321,34 @@ module.exports = {
                 return flagCount < 10 || (req.session.userId && photo.postedBy._id.toString() === req.session.userId);
             });
             return res.json(filteredPhotos);
+        });
+    },
+
+    serveImage: function(req, res) {
+        const filename = req.params.filename;
+        const imagePath = path.join(__dirname, '../public/images', filename);
+
+        if (!fs.existsSync(imagePath)) {
+            // This handles the 404 errors you see in your logs
+            return res.status(404).send('Image not found');
+        }
+
+        fs.readFile(imagePath, async function(err, data) {
+            if (err) return res.status(500).send('Error reading file');
+
+            try {
+                // Try to decompress assuming it's our custom format
+                const pngBuffer = await decompressImage(data);
+                res.setHeader('Content-Type', 'image/png');
+                res.send(pngBuffer);
+            } catch (decodeErr) {
+                // FALLBACK: If decompression fails (e.g. invalid dimensions),
+                // assume it's a standard JPEG/PNG file and send it raw.
+                console.warn(`Serving raw file for ${filename}:`, decodeErr.message);
+
+                res.setHeader('Content-Type', 'image/jpeg'); // Default to JPEG
+                res.send(data);
+            }
         });
     }
 };
